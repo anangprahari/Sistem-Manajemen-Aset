@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
@@ -18,34 +17,54 @@
         body {
             font-feature-settings: "cv03", "cv04", "cv11";
         }
+
+        .sidebar {
+            width: 250px;
+            min-height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background-color: #f8f9fa;
+            border-right: 1px solid #ddd;
+            z-index: 1030;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 1rem;
+        }
+
+        .custom-header {
+            background-color: #0055ff;
+            color: white;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
     </style>
 
-    <!-- Custom CSS for specific page.  -->
     @stack('page-styles')
     @livewireStyles
 </head>
-    <body>
+<body>
+    <div class="sidebar">
+        @include('layouts.body.navbar') {{-- Sidebar (di kiri menumpuk header) --}}
+        @yield('sidebar')
+    </div>
 
-        <div class="page">
+    <div class="main-content">
+        @include('layouts.body.header') {{-- Header geser ke kanan --}}
+        
+        <main class="py-4">
+            @yield('content')
+        </main>
 
-            @include('layouts.body.header')
+        @include('layouts.body.footer')
+    </div>
 
-            @include('layouts.body.navbar')
-
-            <div class="page-wrapper">
-                <div>
-                    @yield('content')
-                </div>
-
-                @include('layouts.body.footer')
-            </div>
-        </div>
-
-        <!-- Tabler Core -->
-        <script src="{{ asset('dist/js/tabler.min.js') }}" defer></script>
-        {{--- Page Scripts ---}}
-        @stack('page-scripts')
-
-        @livewireScripts
-    </body>
+    <script src="{{ asset('dist/js/tabler.min.js') }}" defer></script>
+    @stack('page-scripts')
+    @livewireScripts
+</body>
 </html>

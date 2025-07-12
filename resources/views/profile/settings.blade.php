@@ -5,8 +5,8 @@
     <x-alert/>
 
     <nav class="nav nav-borders">
-        <a class="nav-link ms-0" href="{{ route('profile.edit') }}">Profile</a>
-        <a class="nav-link active" href="{{ route('profile.settings') }}">Settings</a>
+        <a class="nav-link ms-0" href="{{ route('profile.edit') }}">Profil</a>
+        <a class="nav-link active" href="{{ route('profile.settings') }}">Pengaturan</a>
     </nav>
 
     <hr class="mt-0 mb-4" />
@@ -19,7 +19,7 @@
                 <div class="card-header">
                     <div>
                         <h3 class="card-title">
-                            {{ __('Change Password') }}
+                            {{ __('Rubah Password') }}
                         </h3>
                     </div>
                 </div>
@@ -32,7 +32,7 @@
                     </div>
 
                     <div class="card-footer text-end">
-                        <x-button type="submit">{{ __('Save') }}</x-button>
+                        <x-button type="submit">{{ __('Simpan') }}</x-button>
                     </div>
                 </x-form>
             </div>
@@ -41,21 +41,22 @@
         <div class="col-lg-4">
             <div class="card mb-4">
                 <div class="card-header">
-                    Two-Factor Authentication
+                    Autentikasi 2 Faktor
                 </div>
                 <div class="card-body">
                     <p>
-                        Add another level of security to your account by enabling two-factor authentication.
-                        We will send you a text message to verify your login attempts on unrecognized devices and browsers.
+                        Tambahkan tingkat keamanan lain ke akun Anda dengan mengaktifkan otentikasi dua faktor. 
+                        Kami akan mengirimkan pesan teks kepada Anda untuk memverifikasi upaya login Anda pada
+                        perangkat dan browser yang tidak dikenali..
                     </p>
                     <form>
                         <div class="form-check">
                             <input class="form-check-input" id="twoFactorOn" type="radio" name="twoFactor" checked="" />
-                            <label class="form-check-label" for="twoFactorOn">On</label>
+                            <label class="form-check-label" for="twoFactorOn">Aktif</label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" id="twoFactorOff" type="radio" name="twoFactor" />
-                            <label class="form-check-label" for="twoFactorOff">Off</label>
+                            <label class="form-check-label" for="twoFactorOff">Mati</label>
                         </div>
                     </form>
                 </div>
@@ -63,14 +64,14 @@
 
             <div class="card mb-4">
                 <div class="card-header">
-                    Delete Account
+                    Hapus Akun
                 </div>
                 <div class="card-body">
                     <p>
-                        Deleting your account is a permanent action and cannot be undone. If you are sure you want to delete your account, select the button below.
+                        Menghapus akun Anda adalah tindakan permanen dan tidak dapat dibatalkan. Jika Anda yakin ingin menghapus akun Anda, pilih tombol di bawah.
                     </p>
                     <button type="button" class="btn btn-danger-soft text-danger">
-                        I understand, delete my account
+                        Saya mengerti, hapus akun saya
                     </button>
                 </div>
             </div>

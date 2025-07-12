@@ -5,8 +5,8 @@
     <x-alert/>
 
     <nav class="nav nav-borders">
-        <a class="nav-link active ms-0" href="{{ route('profile.edit') }}">Profile</a>
-        <a class="nav-link" href="{{ route('profile.settings') }}">Settings</a>
+        <a class="nav-link active ms-0" href="{{ route('profile.edit') }}">Profil</a>
+        <a class="nav-link" href="{{ route('profile.settings') }}">Pengaturan</a>
     </nav>
 
     <hr class="mt-0 mb-4" />
@@ -20,7 +20,7 @@
                 <div class="card">
                     <div class="card-body">
                         <h3 class="card-title">
-                            {{ __('Profile Image') }}
+                            {{ __('Gambar Profil') }}
                         </h3>
 
                         <img
@@ -29,11 +29,11 @@
                             id="image-preview"
                         />
 
-                        <div class="small font-italic text-muted mb-2">JPG or PNG no larger than 1 MB</div>
+                        <div class="small font-italic text-muted mb-2">JPG atau PNG tidak lebih besar dari 1 MB</div>
 
                         <input class="form-control @error('photo') is-invalid @enderror" type="file"  id="image" name="photo" accept="image/*" onchange="previewImage();">
 
-                        @error('photo')
+                        @error('foto')
                         <div class="invalid-feedback">
                             {{ $message }}
                         </div>
@@ -46,7 +46,7 @@
                 <div class="card">
                     <div class="card-body">
                         <h3 class="card-title">
-                            {{ __('Supplier Details') }}
+                            {{ __('Detail Pemasok') }}
                         </h3>
 
                         <x-input name="name" value="{{ old('name', $user->name) }}" :required="true" />
@@ -58,11 +58,11 @@
 
                     <div class="card-footer text-end">
                         <x-button.save type="submit">
-                            {{ __('Update') }}
+                            {{ __('Perbarui') }}
                         </x-button.save>
 
                         <x-button.back route="{{ route('dashboard') }}">
-                            {{ __('Cancel') }}
+                            {{ __('Batalkan') }}
                         </x-button.back>
                     </div>
                 </div>
