@@ -16,7 +16,7 @@
                 <ul class="list-inline list-inline-dots mb-0">
                     <li class="list-inline-item">
                         Copyright &copy; <script>document.write(new Date().getFullYear())</script>
-                        <a href="#" class="link-secondary">Tabler</a>.
+                        <a href="#" class="link-secondary">SIADEKOM</a>.
                         All rights reserved.
                     </li>
                 </ul>

@@ -6,10 +6,10 @@
             <div class="row g-2 align-items-center">
                 <div class="col">
                     <div class="page-pretitle">
-                        Overview
+                        Gambaran umum
                     </div>
                     <h2 class="page-title">
-                        Dashboard
+                        Beranda
                     </h2>
                 </div>
                 <!-- Page title actions -->
@@ -17,14 +17,14 @@
                     <div class="d-flex gap-2">
                         <a href="{{ route('products.create') }}" class="btn btn-primary d-none d-sm-inline-block">
                             <x-icon.plus/>
-                            Add new Product
+                            Tambah produk baru
                         </a>
                         <a href="{{ route('products.create') }}" class="btn btn-primary d-sm-none btn-icon" aria-label="Create new report">
                             <x-icon.plus/>
                         </a>
                         <a href="{{ route('orders.create') }}" class="btn btn-primary d-none d-sm-inline-block">
                             <x-icon.plus/>
-                            Create new order
+                            Buat pesanan baru
                         </a>
                         <a href="{{ route('orders.create') }}" class="btn btn-primary d-sm-none btn-icon" aria-label="Create new report">
                             <x-icon.plus/>
