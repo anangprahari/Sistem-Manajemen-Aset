@@ -1,34 +1,32 @@
 @extends('layouts.tabler')
 
 @section('content')
-    <!-- Enhanced Page Header with Gradient Background -->
-    <div class="page-header d-print-none" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 0 0 1rem 1rem; margin-bottom: 2rem;">
+    <div class="page-header d-print-none">
         <div class="container-xl">
-            <div class="row g-2 align-items-center py-4">
+            <div class="row g-2 align-items-center">
                 <div class="col">
-                    <div class="page-pretitle text-white-50">
-                        <i class="ti ti-dashboard me-2"></i>Overview
+                    <div class="page-pretitle">
+                        Overview
                     </div>
-                    <h2 class="page-title text-white mb-0">
+                    <h2 class="page-title">
                         Dashboard
                     </h2>
-                    <p class="text-white-75 mb-0 mt-1">Welcome back! Here's what's happening with your business today.</p>
                 </div>
-                <!-- Enhanced Page title actions -->
+                <!-- Page title actions -->
                 <div class="col-auto ms-auto d-print-none">
                     <div class="d-flex gap-2">
-                        <a href="{{ route('products.create') }}" class="btn btn-light btn-pill d-none d-sm-inline-flex align-items-center">
-                            <x-icon.plus class="me-1"/>
-                            Add Product
+                        <a href="{{ route('products.create') }}" class="btn btn-primary d-none d-sm-inline-block">
+                            <x-icon.plus/>
+                            Add new Product
                         </a>
-                        <a href="{{ route('products.create') }}" class="btn btn-light btn-icon btn-pill d-sm-none" aria-label="Create new product">
+                        <a href="{{ route('products.create') }}" class="btn btn-primary d-sm-none btn-icon" aria-label="Create new report">
                             <x-icon.plus/>
                         </a>
-                        <a href="{{ route('orders.create') }}" class="btn btn-outline-light btn-pill d-none d-sm-inline-flex align-items-center">
-                            <x-icon.plus class="me-1"/>
-                            New Order
+                        <a href="{{ route('orders.create') }}" class="btn btn-primary d-none d-sm-inline-block">
+                            <x-icon.plus/>
+                            Create new order
                         </a>
-                        <a href="{{ route('orders.create') }}" class="btn btn-outline-light btn-icon btn-pill d-sm-none" aria-label="Create new order">
+                        <a href="{{ route('orders.create') }}" class="btn btn-primary d-sm-none btn-icon" aria-label="Create new report">
                             <x-icon.plus/>
                         </a>
                     </div>
@@ -36,232 +34,111 @@
             </div>
         </div>
     </div>
-
     <div class="page-body">
         <div class="container-xl">
             <div class="row row-deck row-cards">
-                <!-- Enhanced Stats Cards -->
+
                 <div class="col-12">
                     <div class="row row-cards">
-                        <!-- Products Card -->
-                        <div class="col-sm-6 col-lg-3 mb-4">
+                        <div class="col-sm-6 col-lg-3">
                             <a href="{{ route('products.store') }}" class="text-decoration-none">
-                                <div class="card card-hover shadow-sm border-0 h-100" style="transition: all 0.3s ease; border-radius: 1rem;">
-                                    <div class="card-body p-4">
-                                        <div class="row align-items-center">
-                                            <div class="col-auto">
-                                                <div class="avatar avatar-rounded" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-packages text-white" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                                        <path d="M7 16.5l-5 -3l5 -3l5 3v5.5l-5 3z" />
-                                                        <path d="M2 13.5v5.5l5 3" />
-                                                        <path d="M7 16.545l5 -3.03" />
-                                                        <path d="M17 16.5l-5 -3l5 -3l5 3v5.5l-5 3z" />
-                                                        <path d="M12 19l5 3" />
-                                                        <path d="M17 16.5l5 -3" />
-                                                        <path d="M12 13.5v-5.5l-5 -3l5 -3l5 3v5.5" />
-                                                        <path d="M7 5.03v5.455" />
-                                                        <path d="M12 8l5 -3" />
-                                                    </svg>
-                                                </div>
-                                            </div>
-                                            <div class="col">
-                                                <div class="font-weight-bold text-dark fs-4">
-                                                    {{ $products }}
-                                                </div>
-                                                <div class="text-muted small">
-                                                    Products
-                                                </div>
-                                                <div class="text-success small mt-1">
-                                                    <i class="ti ti-category me-1"></i>{{ $categories }} categories
-                                                </div>
-                                            </div>
+                            <div class="card card-sm">
+                                <div class="card-body">
+                                    <div class="row align-items-center">
+                                        <div class="col-auto">
+                                    <span class="bg-primary text-white avatar"><!-- Download SVG icon from http://tabler-icons.io/i/currency-dollar -->
+                                      <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-packages" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 16.5l-5 -3l5 -3l5 3v5.5l-5 3z" /><path d="M2 13.5v5.5l5 3" /><path d="M7 16.545l5 -3.03" /><path d="M17 16.5l-5 -3l5 -3l5 3v5.5l-5 3z" /><path d="M12 19l5 3" /><path d="M17 16.5l5 -3" /><path d="M12 13.5v-5.5l-5 -3l5 -3l5 3v5.5" /><path d="M7 5.03v5.455" /><path d="M12 8l5 -3" /></svg>
+                                    </span>
                                         </div>
-                                    </div>
-                                    <div class="card-footer bg-transparent border-0 pt-0">
-                                        <div class="d-flex align-items-center text-muted small">
-                                            <i class="ti ti-trending-up me-1"></i>
-                                            <span>Manage inventory</span>
+                                        <div class="col">
+                                            <div class="font-weight-medium">
+                                                {{ $products }} Products
+                                            </div>
+                                            <div class="text-muted">
+                                                {{ $categories }} categories
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
+                            </div>
                             </a>
                         </div>
-
-                        <!-- Orders Card -->
-                        <div class="col-sm-6 col-lg-3 mb-4">
+                        <div class="col-sm-6 col-lg-3">
                             <a href="{{ route('orders.index') }}" class="text-decoration-none">
-                                <div class="card card-hover shadow-sm border-0 h-100" style="transition: all 0.3s ease; border-radius: 1rem;">
-                                    <div class="card-body p-4">
-                                        <div class="row align-items-center">
-                                            <div class="col-auto">
-                                                <div class="avatar avatar-rounded" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon text-white" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                                        <path d="M6 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
-                                                        <path d="M17 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
-                                                        <path d="M17 17h-11v-14h-2" />
-                                                        <path d="M6 5l14 1l-1 7h-13" />
-                                                    </svg>
-                                                </div>
-                                            </div>
-                                            <div class="col">
-                                                <div class="font-weight-bold text-dark fs-4">
-                                                    {{ $orders }}
-                                                </div>
-                                                <div class="text-muted small">
-                                                    Orders
-                                                </div>
-                                                <div class="text-success small mt-1">
-                                                    <i class="ti ti-check me-1"></i>{{ $completedOrders }} {{ __('completed') }}
-                                                </div>
-                                            </div>
+                            <div class="card card-sm">
+                                <div class="card-body">
+                                    <div class="row align-items-center">
+                                        <div class="col-auto">
+                                    <span class="bg-green text-white avatar"><!-- Download SVG icon from http://tabler-icons.io/i/shopping-cart -->
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 17h-11v-14h-2" /><path d="M6 5l14 1l-1 7h-13" /></svg>
+                                    </span>
                                         </div>
-                                    </div>
-                                    <div class="card-footer bg-transparent border-0 pt-0">
-                                        <div class="d-flex align-items-center text-muted small">
-                                            <i class="ti ti-shopping-cart me-1"></i>
-                                            <span>View all orders</span>
+                                        <div class="col">
+                                            <div class="font-weight-medium">
+                                                {{ $orders }} Orders
+                                            </div>
+                                            <div class="text-muted">
+                                                {{ $completedOrders }} {{ __('completed') }}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </a>
+                            </div>
+                        </a>
                         </div>
-
-                        <!-- Purchases Card -->
-                        <div class="col-sm-6 col-lg-3 mb-4">
+                        <div class="col-sm-6 col-lg-3">
                             <a href="{{ route('purchases.store') }}" class="text-decoration-none">
-                                <div class="card card-hover shadow-sm border-0 h-100" style="transition: all 0.3s ease; border-radius: 1rem;">
-                                    <div class="card-body p-4">
-                                        <div class="row align-items-center">
-                                            <div class="col-auto">
-                                                <div class="avatar avatar-rounded" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-truck-delivery text-white" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                                        <path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
-                                                        <path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
-                                                        <path d="M5 17h-2v-4m-1 -8h11v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5" />
-                                                        <path d="M3 9l4 0" />
-                                                    </svg>
-                                                </div>
-                                            </div>
-                                            <div class="col">
-                                                <div class="font-weight-bold text-dark fs-4">
-                                                    {{ $purchases }}
-                                                </div>
-                                                <div class="text-muted small">
-                                                    Purchases
-                                                </div>
-                                                <div class="text-info small mt-1">
-                                                    <i class="ti ti-calendar-today me-1"></i>{{ $todayPurchases }} today
-                                                </div>
-                                            </div>
+                            <div class="card card-sm">
+                                <div class="card-body">
+                                    <div class="row align-items-center">
+                                        <div class="col-auto">
+                                    <span class="bg-twitter text-white avatar"><!-- Download SVG icon from http://tabler-icons.io/i/brand-twitter -->
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-truck-delivery" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M5 17h-2v-4m-1 -8h11v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5" /><path d="M3 9l4 0" /></svg>
+                                    </span>
                                         </div>
-                                    </div>
-                                    <div class="card-footer bg-transparent border-0 pt-0">
-                                        <div class="d-flex align-items-center text-muted small">
-                                            <i class="ti ti-truck me-1"></i>
-                                            <span>Manage purchases</span>
+                                        <div class="col">
+                                            <div class="font-weight-medium">
+                                                {{ $purchases }} Purchases
+                                            </div>
+                                            <div class="text-muted">
+                                                {{ $todayPurchases }} today
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </a>
+                            </div>
+                        </a>
                         </div>
-
-                        <!-- Quotations Card -->
-                        <div class="col-sm-6 col-lg-3 mb-4">
+                        <div class="col-sm-6 col-lg-3">
                             <a href="{{ route('quotations.index') }}" class="text-decoration-none">
-                                <div class="card card-hover shadow-sm border-0 h-100" style="transition: all 0.3s ease; border-radius: 1rem;">
-                                    <div class="card-body p-4">
-                                        <div class="row align-items-center">
-                                            <div class="col-auto">
-                                                <div class="avatar avatar-rounded" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-files text-dark" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                                        <path d="M15 3v4a1 1 0 0 0 1 1h4" />
-                                                        <path d="M18 17h-7a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h4l5 5v7a2 2 0 0 1 -2 2z" />
-                                                        <path d="M16 17v2a2 2 0 0 1 -2 2h-7a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h2" />
-                                                    </svg>
-                                                </div>
-                                            </div>
-                                            <div class="col">
-                                                <div class="font-weight-bold text-dark fs-4">
-                                                    {{ $quotations }}
-                                                </div>
-                                                <div class="text-muted small">
-                                                    Quotations
-                                                </div>
-                                                <div class="text-warning small mt-1">
-                                                    <i class="ti ti-calendar-today me-1"></i>{{ $todayQuotations }} today
-                                                </div>
-                                            </div>
+                            <div class="card card-sm">
+                                <div class="card-body">
+                                    <div class="row align-items-center">
+                                        <div class="col-auto">
+                                            <span class="bg-facebook text-white avatar"><!-- Download SVG icon from http://tabler-icons.io/i/brand-facebook -->
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-files" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 3v4a1 1 0 0 0 1 1h4" /><path d="M18 17h-7a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h4l5 5v7a2 2 0 0 1 -2 2z" /><path d="M16 17v2a2 2 0 0 1 -2 2h-7a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h2" /></svg>
+                                            </span>
                                         </div>
-                                    </div>
-                                    <div class="card-footer bg-transparent border-0 pt-0">
-                                        <div class="d-flex align-items-center text-muted small">
-                                            <i class="ti ti-file-text me-1"></i>
-                                            <span>View quotations</span>
+                                        <div class="col">
+                                            <div class="font-weight-medium">
+                                                {{ $quotations }} Quotations
+                                            </div>
+                                            <div class="text-muted">
+                                                {{ $todayQuotations }} today
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
+                            </div>
                             </a>
                         </div>
                     </div>
                 </div>
+
+
             </div>
         </div>
     </div>
-
-    <!-- Enhanced Custom Styles -->
-    <style>
-        .card-hover {
-            transition: all 0.3s ease !important;
-        }
-        .card-hover:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
-        }
-        .btn-pill {
-            border-radius: 50px !important;
-        }
-        .avatar {
-            width: 3rem;
-            height: 3rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 1rem;
-        }
-        .fs-4 {
-            font-size: 1.5rem !important;
-        }
-        .page-header {
-            position: relative;
-            overflow: hidden;
-        }
-        .page-header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="1" fill="white" opacity="0.1"/><circle cx="10" cy="50" r="1" fill="white" opacity="0.1"/><circle cx="90" cy="30" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>') repeat;
-            opacity: 0.5;
-        }
-        .text-white-50 {
-            color: rgba(255, 255, 255, 0.5) !important;
-        }
-        .text-white-75 {
-            color: rgba(255, 255, 255, 0.75) !important;
-        }
-        .border-0 {
-            border: none !important;
-        }
-        .shadow-sm {
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
-        }
-    </style>
 @endsection
 
 @push('page-libraries')
