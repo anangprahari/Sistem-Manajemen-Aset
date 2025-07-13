@@ -14,55 +14,66 @@
         :root {
             --tblr-font-sans-serif: 'Inter Var', -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif;
         }
-        body {
-            font-feature-settings: "cv03", "cv04", "cv11";
-        }
+       body {
+    margin: 0;
+    padding: 0;
+    font-feature-settings: "cv03", "cv04", "cv11";
+}
 
-        .sidebar {
-            width: 250px;
-            min-height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            background-color: #f8f9fa;
-            border-right: 1px solid #ddd;
-            z-index: 1030;
-        }
+.sidebar {
+    width: 200px;
+    min-height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: #f8f9fa;
+    border-right: 1px solid #ddd;
+    z-index: 1030;
+}
 
-        .main-content {
-            margin-left: 250px;
-            padding: 1rem;
-        }
+.main-content {
+    margin-left: 200px;
+    padding: 0;
+}
 
-        .custom-header {
-            background-color: #0055ff;
-            color: white;
-            padding: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
+/* Header fix */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 200px;
+    width: calc(100% - 200px);
+    z-index: 1028;
+    height: 80px;
+}
+
+main {
+    padding: 100px 1rem 1rem 0.5rem; /* top padding 100px */
+    overflow-x: auto;
+}
+
     </style>
 
     @stack('page-styles')
     @livewireStyles
 </head>
 <body>
+    {{-- Sidebar --}}
     <div class="sidebar">
-        @include('layouts.body.navbar') {{-- Sidebar (di kiri menumpuk header) --}}
+        @include('layouts.body.navbar')
         @yield('sidebar')
     </div>
 
+    {{-- Header --}}
+    @include('layouts.body.header')
+
+    {{-- Main Content --}}
     <div class="main-content">
-        @include('layouts.body.header') {{-- Header geser ke kanan --}}
-        
-        <main class="py-4">
+        <main>
             @yield('content')
         </main>
 
         @include('layouts.body.footer')
     </div>
-
     <script src="{{ asset('dist/js/tabler.min.js') }}" defer></script>
     @stack('page-scripts')
     @livewireScripts
