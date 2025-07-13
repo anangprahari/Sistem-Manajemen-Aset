@@ -2,6 +2,28 @@
 
 @section('content')
 <div class="login-form">
+
+ {{-- Menampilkan pesan error --}}
+   @if ($errors->any())
+    <div class="alert alert-danger" style="
+        background: rgba(255, 0, 0, 0.1);
+        border: 1px solid rgba(255, 0, 0, 0.2);
+        color: #c0392b;
+        padding: 15px 20px;
+        border-radius: 10px;
+        margin-bottom: 25px;
+        font-size: 0.95rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    ">
+        <ul style="margin: 0; padding-left: 20px;">
+            @foreach ($errors->all() as $error)
+                <li style="margin-bottom: 6px;">{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+
     <form action="{{ route('login') }}" method="POST" autocomplete="off">
         @csrf
         
@@ -37,9 +59,5 @@
             </button>
         </div>
     </form>
-    
-    <a href="{{ route('password.request') }}" class="forgot-password">
-        Lupa Password?
-    </a>
 </div>
 @endsection

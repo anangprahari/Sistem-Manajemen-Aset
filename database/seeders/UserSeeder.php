@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
@@ -13,32 +13,42 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
+        // Hapus semua data users sebelum seeding ulang
+        User::truncate();
+
+        // Data baru yang ingin dimasukkan
         $users = collect([
             [
-                'name' => 'Admin',
-                'email' => 'admin@admin.com',
+                'name' => 'Anang',
+                'username' => 'anangpraf',
+                'email' => 'anang123@gmail.com',
                 'email_verified_at' => now(),
-                'password' => bcrypt('password'),
-                'created_at' => now()
+                'password' => Hash::make('Anang12345#'),
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
             [
-                'name' => 'quest',
-                'email' => 'quest@quest.com',
+                'name' => 'Febry',
+                'username' => 'febritxt',
+                'email' => 'febri123@gmail.com.com',
                 'email_verified_at' => now(),
-                'password' => bcrypt('password'),
-                'created_at' => now()
+                'password' => Hash::make('Febri12345#'),
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
             [
-                'name' => 'user',
-                'email' => 'user@user.com',
+                'name' => 'Agung',
+                'username' => 'agungyugo',
+                'email' => 'agung123@gmail.com.com',
                 'email_verified_at' => now(),
-                'password' => bcrypt('password'),
-                'created_at' => now()
+                'password' => Hash::make('Agung12345#'),
+                'created_at' => now(),
+                'updated_at' => now(),
             ]
         ]);
 
-        $users->each(function ($user){
-            User::insert($user);
+        $users->each(function ($user) {
+            User::create($user);
         });
     }
 }
