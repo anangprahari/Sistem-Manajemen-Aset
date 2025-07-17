@@ -10,7 +10,7 @@
                     SIADEKOM
                 </span>
                 <span class="fw-normal opacity-90" style="font-size: 0.9rem; letter-spacing: 0.5px;">
-                    Sistem Informasi Aset Diskominfo
+                 Sistem Informasi Aset Diskominfo
                 </span>
             </div>
         </div>

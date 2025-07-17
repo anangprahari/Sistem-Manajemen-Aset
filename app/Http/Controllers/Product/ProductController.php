@@ -9,7 +9,9 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\Unit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Picqer\Barcode\BarcodeGeneratorHTML;
+
 
 class ProductController extends Controller
 {
@@ -124,7 +126,7 @@ class ProductController extends Controller
 
             // Delete old image if exists
             if ($product->product_image) {
-                \Storage::disk('public')->delete('products/' . $product->product_image);
+                Storage::disk('public')->delete('products/' . $product->product_image);
             }
 
             // Prepare new image
@@ -151,7 +153,7 @@ class ProductController extends Controller
          * Delete photo if exists.
          */
         if ($product->product_image) {
-            \Storage::disk('public')->delete('products/' . $product->product_image);
+            Storage::disk('public')->delete('products/' . $product->product_image);
         }
 
         $product->delete();

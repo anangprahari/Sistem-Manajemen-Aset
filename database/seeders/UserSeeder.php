@@ -14,7 +14,7 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         // Hapus semua data users sebelum seeding ulang
-        User::truncate();
+        // User::truncate();
 
         // Data baru yang ingin dimasukkan
         $users = collect([

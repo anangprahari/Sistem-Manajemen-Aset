@@ -18,17 +18,7 @@ use App\Http\Controllers\Quotation\QuotationController;
 use App\Http\Controllers\Dashboards\DashboardController;
 use App\Http\Controllers\Product\ProductExportController;
 use App\Http\Controllers\Product\ProductImportController;
-
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
-|
-*/
+use App\Http\Controllers\Aset\AsetController;
 
 Route::get('php/', function () {
     return phpinfo();
@@ -43,7 +33,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // User Management
-    Route::resource('/users', UserController::class); //->except(['show']);
+    Route::resource('/users', UserController::class);
     Route::put('/user/change-password/{username}', [UserController::class, 'updatePassword'])->name('users.updatePassword');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -83,7 +73,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/due/order/edit/{order}', [DueOrderController::class, 'edit'])->name('due.edit');
     Route::put('/due/order/update/{order}', [DueOrderController::class, 'update'])->name('due.update');
 
-    // TODO: Remove from OrderController
     Route::get('/orders/details/{order_id}/download', [OrderController::class, 'downloadInvoice'])->name('order.downloadInvoice');
 
     // Route Purchases
@@ -100,11 +89,22 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/purchases/{purchase}/edit', [PurchaseController::class, 'edit'])->name('purchases.edit');
     Route::put('/purchases/{purchase}/edit', [PurchaseController::class, 'update'])->name('purchases.update');
     Route::delete('/purchases/{purchase}', [PurchaseController::class, 'destroy'])->name('purchases.delete');
+
+    // =============================
+    // ROUTES FOR ASET
+    // =============================
+    Route::resource('asets', AsetController::class);
+
+    Route::get('/api/kelompoks/{akunId}', [AsetController::class, 'getKelompoks']);
+    Route::get('/api/jenis/{kelompokId}', [AsetController::class, 'getJenis']);
+    Route::get('/api/objeks/{jenisId}', [AsetController::class, 'getObjeks']);
+    Route::get('/api/rincian-objeks/{objekId}', [AsetController::class, 'getRincianObjeks']);
+    Route::get('/api/sub-rincian-objeks/{rincianObjekId}', [AsetController::class, 'getSubRincianObjeks']);
+    Route::get('/api/sub-sub-rincian-objeks/{subRincianObjekId}', [AsetController::class, 'getSubSubRincianObjeks']);
 });
 
 require __DIR__ . '/auth.php';
 
 Route::get('test/', function () {
-    //    return view('test');
     return view('orders.create');
 });
