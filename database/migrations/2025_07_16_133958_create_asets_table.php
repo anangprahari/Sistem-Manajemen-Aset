@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('asets', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('sub_sub_rincian_objek_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('sub_sub_rincian_objek_id')->constrained('sub_sub_rincian_objeks')->cascadeOnDelete();
             $table->string('kode_barang');
             $table->string('nama_bidang_barang');
             $table->string('register');

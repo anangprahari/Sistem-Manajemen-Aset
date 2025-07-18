@@ -95,12 +95,14 @@ Route::middleware(['auth'])->group(function () {
     // =============================
     Route::resource('asets', AsetController::class);
 
-    Route::get('/api/kelompoks/{akunId}', [AsetController::class, 'getKelompoks']);
-    Route::get('/api/jenis/{kelompokId}', [AsetController::class, 'getJenis']);
-    Route::get('/api/objeks/{jenisId}', [AsetController::class, 'getObjeks']);
-    Route::get('/api/rincian-objeks/{objekId}', [AsetController::class, 'getRincianObjeks']);
-    Route::get('/api/sub-rincian-objeks/{rincianObjekId}', [AsetController::class, 'getSubRincianObjeks']);
-    Route::get('/api/sub-sub-rincian-objeks/{subRincianObjekId}', [AsetController::class, 'getSubSubRincianObjeks']);
+    // PERBAIKAN: Ubah route API menjadi sesuai dengan AJAX call
+    Route::get('/asets/get-kelompok/{akunId}', [AsetController::class, 'getKelompoks']);
+    Route::get('/asets/get-jenis/{kelompokId}', [AsetController::class, 'getJenis']);
+    Route::get('/asets/get-objek/{jenisId}', [AsetController::class, 'getObjeks']);
+    Route::get('/asets/get-rincian-objek/{objekId}', [AsetController::class, 'getRincianObjeks']);
+    Route::get('/asets/get-sub-rincian-objek/{rincianObjekId}', [AsetController::class, 'getSubRincianObjeks']);
+    Route::get('/asets/get-sub-sub-rincian-objek/{subRincianObjekId}', [AsetController::class, 'getSubSubRincianObjeks']);
+    Route::get('/asets/generate-kode-preview', [AsetController::class, 'generateKodeBarangPreview']);
 });
 
 require __DIR__ . '/auth.php';

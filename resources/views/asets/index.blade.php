@@ -1,159 +1,115 @@
 @extends('layouts.tabler')
 
-@section('title', 'Daftar Aset Barang')
-
 @section('content')
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Daftar Aset Barang Milik Daerah</h3>
-                    <div class="card-tools">
-                        <a href="{{ route('asets.create') }}" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> Tambah Aset
-                        </a>
-                    </div>
-                </div>
-                <div class="card-body">
-                    @if(session('success'))
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            {{ session('success') }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    @endif
+<div class="container">
+    <h2 class="mb-4">Daftar Seluruh Aset</h2>
 
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-striped">
-                            <thead>
-                                <tr>
-                                    <th width="5%">No</th>
-                                    <th>Kode Barang</th>
-                                    <th>Nama Barang</th>
-                                    <th>Jenis Barang</th>
-                                    <th>Merk/Type</th>
-                                    <th>Satuan</th>
-                                    <th>Jumlah</th>
-                                    <th>Harga Satuan</th>
-                                    <th>Keadaan</th>
-                                    <th>Bukti</th>
-                                    <th width="10%">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($asets as $index => $aset)
-                                <tr>
-                                    <td>{{ $asets->firstItem() + $index }}</td>
-                                    <td>
-                                        <span class="badge bg-primary">{{ $aset->kode_barang }}</span>
-                                    </td>
-                                    <td>
-                                        <strong>{{ $aset->nama_bidang_barang }}</strong><br>
-                                        <small class="text-muted">{{ $aset->register }}</small>
-                                    </td>
-                                    <td>{{ $aset->nama_jenis_barang }}</td>
-                                    <td>{{ $aset->merk_type ?? '-' }}</td>
-                                    <td>{{ $aset->satuan }}</td>
-                                    <td>{{ number_format($aset->jumlah_barang) }}</td>
-                                    <td>{{ $aset->formatted_harga }}</td>
-                                    <td>
-                                        @if($aset->keadaan_barang == 'Baik')
-                                            <span class="badge bg-success">{{ $aset->keadaan_barang }}</span>
-                                        @elseif($aset->keadaan_barang == 'Kurang Baik')
-                                            <span class="badge bg-warning">{{ $aset->keadaan_barang }}</span>
-                                        @else
-                                            <span class="badge bg-danger">{{ $aset->keadaan_barang }}</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <div class="btn-group" role="group">
-                                            @if($aset->bukti_barang)
-                                                <a href="{{ $aset->bukti_barang_url }}" target="_blank" class="btn btn-sm btn-outline-primary" title="Lihat Foto">
-                                                    <i class="fas fa-image"></i>
-                                                </a>
-                                            @endif
-                                            @if($aset->bukti_berita)
-                                                <a href="{{ $aset->bukti_berita_url }}" target="_blank" class="btn btn-sm btn-outline-danger" title="Lihat PDF">
-                                                    <i class="fas fa-file-pdf"></i>
-                                                </a>
-                                            @endif
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="btn-group" role="group">
-                                            <a href="{{ route('asets.show', $aset) }}" class="btn btn-sm btn-info" title="Detail">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            <a href="{{ route('asets.edit', $aset) }}" class="btn btn-sm btn-warning" title="Edit">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <form action="{{ route('asets.destroy', $aset) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin hapus data ini?')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-danger" title="Hapus">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="11" class="text-center">
-                                        <div class="py-4">
-                                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                                            <p class="text-muted">Belum ada data aset barang.</p>
-                                            <a href="{{ route('asets.create') }}" class="btn btn-primary">
-                                                <i class="fas fa-plus"></i> Tambah Aset Pertama
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
+    @if(session('success'))
+        <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
 
-                    <!-- Pagination -->
-                    <div class="d-flex justify-content-between align-items-center mt-3">
-                        <div>
-                            Menampilkan {{ $asets->firstItem() ?? 0 }} sampai {{ $asets->lastItem() ?? 0 }} 
-                            dari {{ $asets->total() }} data
-                        </div>
-                        <div>
-                            {{ $asets->links() }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    @if(session('error'))
+        <div class="alert alert-danger">{{ session('error') }}</div>
+    @endif
+
+    <div class="mb-3">
+        <a href="{{ route('asets.create') }}" class="btn btn-primary">+ Tambah Aset</a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped table-hover align-middle">
+            <thead class="table-dark text-center">
+                <tr>
+                    <th>#</th>
+                    <th>Kode Barang</th>
+                    <th>Nama Bidang Barang</th>
+                    <th>Register</th>
+                    <th>Nama Jenis Barang</th>
+                    <th>Merk / Type</th>
+                    <th>No. Sertifikat</th>
+                    <th>No. Plat Kendaraan</th>
+                    <th>No. Pabrik</th>
+                    <th>No. Casis</th>
+                    <th>Bahan</th>
+                    <th>Asal Perolehan</th>
+                    <th>Ukuran Barang / Konstruksi</th>
+                    <th>Satuan</th>
+                    <th>Keadaan Barang</th>
+                    <th>Jumlah Barang</th>
+                    <th>Harga Satuan</th>
+                    <th>Total Harga</th>
+                    <th>Bukti Barang</th>
+                    <th>Bukti Berita</th>
+                    <th>Kode Sub Sub Rincian Objek</th>
+                    <th>Nama Barang (SubSub)</th>
+                    <th>Akun</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($asets as $index => $aset)
+                    <tr>
+                        <td class="text-center">{{ ($asets->currentPage() - 1) * $asets->perPage() + $index + 1 }}</td>
+                        <td>{{ $aset->kode_barang }}</td>
+                        <td>{{ $aset->nama_bidang_barang }}</td>
+                        <td>{{ $aset->register }}</td>
+                        <td>{{ $aset->nama_jenis_barang }}</td>
+                        <td>{{ $aset->merk_type ?? '-' }}</td>
+                        <td>{{ $aset->no_sertifikat ?? '-' }}</td>
+                        <td>{{ $aset->no_plat_kendaraan ?? '-' }}</td>
+                        <td>{{ $aset->no_pabrik ?? '-' }}</td>
+                        <td>{{ $aset->no_casis ?? '-' }}</td>
+                        <td>{{ $aset->bahan ?? '-' }}</td>
+                        <td>{{ $aset->asal_perolehan }}</td>
+                        <td>{{ $aset->ukuran_barang_konstruksi ?? '-' }}</td>
+                        <td class="text-center">{{ $aset->satuan }}</td>
+                        <td class="text-center">
+                            <span class="badge bg-{{ $aset->keadaan_barang === 'Baik' ? 'success' : ($aset->keadaan_barang === 'Kurang Baik' ? 'warning' : 'danger') }}">
+                                {{ $aset->keadaan_barang }}
+                            </span>
+                        </td>
+                        <td class="text-center">{{ $aset->jumlah_barang }}</td>
+                        <td class="text-end">{{ $aset->formatted_harga }}</td>
+                        <td class="text-end">{{ $aset->formatted_total_harga }}</td>
+                        <td class="text-center">
+                            @if($aset->bukti_barang_url)
+                                <a href="{{ $aset->bukti_barang_url }}" target="_blank">Lihat</a>
+                            @else
+                                -
+                            @endif
+                        </td>
+                        <td class="text-center">
+                            @if($aset->bukti_berita_url)
+                                <a href="{{ $aset->bukti_berita_url }}" target="_blank">Lihat</a>
+                            @else
+                                -
+                            @endif
+                        </td>
+                        <td>{{ $aset->subSubRincianObjek->kode ?? '-' }}</td>
+                        <td>{{ $aset->subSubRincianObjek->nama_barang ?? '-' }}</td>
+                        <td>{{ $aset->subSubRincianObjek->subRincianObjek->rincianObjek->objek->jenis->kelompok->akun->nama ?? '-' }}</td>
+                        <td class="text-center">
+                            <a href="{{ route('asets.show', $aset->id) }}" class="btn btn-sm btn-info">Lihat</a>
+                            <a href="{{ route('asets.edit', $aset->id) }}" class="btn btn-sm btn-warning">Edit</a>
+                            <form action="{{ route('asets.destroy', $aset->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin ingin menghapus aset ini?')">
+                                @csrf
+                                @method('DELETE')
+                                <button class="btn btn-sm btn-danger">Hapus</button>
+                            </form>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="24" class="text-center text-muted">Belum ada data aset.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+
+    {{-- Pagination --}}
+    <div class="mt-3">
+        {{ $asets->links() }}
     </div>
 </div>
-
-<!-- Modal Preview Image -->
-<div class="modal fade" id="imageModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Preview Bukti Barang</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body text-center">
-                <img id="previewImage" class="img-fluid" alt="Bukti Barang">
-            </div>
-        </div>
-    </div>
-</div>
-
-@push('scripts')
-<script>
-    // Preview image in modal
-    $(document).on('click', '.btn-outline-primary', function(e) {
-        e.preventDefault();
-        const imageUrl = $(this).attr('href');
-        $('#previewImage').attr('src', imageUrl);
-        $('#imageModal').modal('show');
-    });
-</script>
-@endpush
 @endsection
