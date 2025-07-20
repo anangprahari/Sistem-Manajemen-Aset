@@ -9,6 +9,7 @@ class Aset extends Model
 {
     use HasFactory;
 
+    protected $table = 'asets';
     protected $fillable = [
         'sub_sub_rincian_objek_id',
         'kode_barang',

@@ -9,6 +9,7 @@ class Objek extends Model
 {
     use HasFactory;
 
+    protected $table = 'objeks';
     protected $fillable = ['jenis_id', 'kode', 'nama'];
 
     public function jenis()

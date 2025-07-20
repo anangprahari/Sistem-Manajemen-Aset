@@ -3,32 +3,38 @@
 namespace App\Http\Controllers\Aset;
 
 use App\Http\Controllers\Controller;
-use App\Models\Akun;
-use App\Models\Kelompok;
-use App\Models\Jenis;
-use App\Models\Objek;
-use App\Models\RincianObjek;
-use App\Models\SubRincianObjek;
-use App\Models\SubSubRincianObjek;
-use App\Models\Aset;
+use App\Models\{Akun, Kelompok, Jenis, Objek, RincianObjek, SubRincianObjek, SubSubRincianObjek, Aset};
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class AsetController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $asets = Aset::with([
+        $query = Aset::with([
             'subSubRincianObjek.subRincianObjek.rincianObjek.objek.jenis.kelompok.akun'
-        ])->paginate(10);
+        ]);
+
+        // Add search functionality
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_bidang_barang', 'like', "%{$search}%")
+                    ->orWhere('nama_jenis_barang', 'like', "%{$search}%")
+                    ->orWhere('kode_barang', 'like', "%{$search}%");
+            });
+        }
+
+        $asets = $query->latest()->paginate(15);
 
         return view('asets.index', compact('asets'));
     }
@@ -47,7 +53,7 @@ class AsetController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $validator = Validator::make($request->all(), [
+        $validated = $request->validate([
             'akun_id' => 'required|exists:akuns,id',
             'kelompok_id' => 'required|exists:kelompoks,id',
             'jenis_id' => 'required|exists:jenis,id',
@@ -66,55 +72,51 @@ class AsetController extends Controller
             'bahan' => 'nullable|string|max:255',
             'asal_perolehan' => 'required|string|max:255',
             'ukuran_barang_konstruksi' => 'nullable|string|max:255',
-            'satuan' => 'required|string|max:255',
-            'keadaan_barang' => 'required|in:Baik,Kurang Baik,Rusak Berat',
+            'satuan' => 'required|string|max:100',
+            'keadaan_barang' => ['required', Rule::in(['Baik', 'Kurang Baik', 'Rusak Berat'])],
             'jumlah_barang' => 'required|integer|min:1',
             'harga_satuan' => 'required|numeric|min:0',
-            'bukti_barang' => 'nullable|string|max:255',
-            'bukti_berita' => 'nullable|string|max:255',
+            'bukti_barang' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'bukti_berita' => 'nullable|mimes:pdf|max:10240',
+            'kode_barang' => 'required|string',
         ]);
 
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
-
         try {
-            DB::beginTransaction();
+            return DB::transaction(function () use ($validated, $request) {
+                // Handle file uploads
+                if ($request->hasFile('bukti_barang')) {
+                    $fileName = time() . '_' . $request->file('bukti_barang')->getClientOriginalName();
+                    $request->file('bukti_barang')->storeAs('bukti_barang', $fileName, 'public');
+                    $validated['bukti_barang'] = $fileName;
+                }
 
-            // Generate kode barang otomatis
-            $kodeBarang = $this->generateKodeBarang($request->sub_sub_rincian_objek_id);
+                if ($request->hasFile('bukti_berita')) {
+                    $fileName = time() . '_' . $request->file('bukti_berita')->getClientOriginalName();
+                    $request->file('bukti_berita')->storeAs('bukti_berita', $fileName, 'public');
+                    $validated['bukti_berita'] = $fileName;
+                }
 
-            $aset = Aset::create([
-                'sub_sub_rincian_objek_id' => $request->sub_sub_rincian_objek_id,
-                'kode_barang' => $kodeBarang,
-                'nama_bidang_barang' => $request->nama_bidang_barang,
-                'register' => $request->register,
-                'nama_jenis_barang' => $request->nama_jenis_barang,
-                'merk_type' => $request->merk_type,
-                'no_sertifikat' => $request->no_sertifikat,
-                'no_plat_kendaraan' => $request->no_plat_kendaraan,
-                'no_pabrik' => $request->no_pabrik,
-                'no_casis' => $request->no_casis,
-                'bahan' => $request->bahan,
-                'asal_perolehan' => $request->asal_perolehan,
-                'ukuran_barang_konstruksi' => $request->ukuran_barang_konstruksi,
-                'satuan' => $request->satuan,
-                'keadaan_barang' => $request->keadaan_barang,
-                'jumlah_barang' => $request->jumlah_barang,
-                'harga_satuan' => $request->harga_satuan,
-                'bukti_barang' => $request->bukti_barang,
-                'bukti_berita' => $request->bukti_berita,
-            ]);
+                // Remove hierarchy fields that are not part of the asets table
+                $asetData = $validated;
+                unset(
+                    $asetData['akun_id'],
+                    $asetData['kelompok_id'],
+                    $asetData['jenis_id'],
+                    $asetData['objek_id'],
+                    $asetData['rincian_objek_id'],
+                    $asetData['sub_rincian_objek_id']
+                );
 
-            DB::commit();
+                $aset = Aset::create($asetData);
 
-            return redirect()->route('asets.index')
-                ->with('success', 'Aset berhasil ditambahkan dengan kode: ' . $kodeBarang);
+                return redirect()->route('asets.index')
+                    ->with('success', "Aset berhasil ditambahkan dengan kode: {$validated['kode_barang']}");
+            });
         } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Error creating aset: ' . $e->getMessage());
+            Log::error('Error creating aset: ' . $e->getMessage(), [
+                'request' => $validated,
+                'trace' => $e->getTraceAsString()
+            ]);
 
             return redirect()->back()
                 ->with('error', 'Terjadi kesalahan saat menyimpan data aset.')
@@ -127,10 +129,7 @@ class AsetController extends Controller
      */
     public function show(Aset $aset): View
     {
-        $aset->load([
-            'subSubRincianObjek.subRincianObjek.rincianObjek.objek.jenis.kelompok.akun'
-        ]);
-
+        $aset->load(['subSubRincianObjek.subRincianObjek.rincianObjek.objek.jenis.kelompok.akun']);
         return view('asets.show', compact('aset'));
     }
 
@@ -139,40 +138,20 @@ class AsetController extends Controller
      */
     public function edit(Aset $aset): View
     {
-        $aset->load([
-            'subSubRincianObjek.subRincianObjek.rincianObjek.objek.jenis.kelompok.akun'
-        ]);
+        $aset->load(['subSubRincianObjek.subRincianObjek.rincianObjek.objek.jenis.kelompok.akun']);
 
+        // Extract hierarchy untuk form
+        $hierarchy = $this->extractHierarchy($aset);
         $akuns = Akun::orderBy('nama')->get();
 
-        // Load related data for editing
-        $selectedAkun = $aset->subSubRincianObjek->subRincianObjek->rincianObjek->objek->jenis->kelompok->akun;
-        $selectedKelompok = $aset->subSubRincianObjek->subRincianObjek->rincianObjek->objek->jenis->kelompok;
-        $selectedJenis = $aset->subSubRincianObjek->subRincianObjek->rincianObjek->objek->jenis;
-        $selectedObjek = $aset->subSubRincianObjek->subRincianObjek->rincianObjek->objek;
-        $selectedRincianObjek = $aset->subSubRincianObjek->subRincianObjek->rincianObjek;
-        $selectedSubRincianObjek = $aset->subSubRincianObjek->subRincianObjek;
-        $selectedSubSubRincianObjek = $aset->subSubRincianObjek;
-
-        return view('asets.edit', compact(
-            'aset',
-            'akuns',
-            'selectedAkun',
-            'selectedKelompok',
-            'selectedJenis',
-            'selectedObjek',
-            'selectedRincianObjek',
-            'selectedSubRincianObjek',
-            'selectedSubSubRincianObjek'
-        ));
+        return view('asets.edit', compact('aset', 'hierarchy', 'akuns'));
     }
-
     /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, Aset $aset): RedirectResponse
     {
-        $validator = Validator::make($request->all(), [
+        $validated = $request->validate([
             'akun_id' => 'required|exists:akuns,id',
             'kelompok_id' => 'required|exists:kelompoks,id',
             'jenis_id' => 'required|exists:jenis,id',
@@ -191,58 +170,65 @@ class AsetController extends Controller
             'bahan' => 'nullable|string|max:255',
             'asal_perolehan' => 'required|string|max:255',
             'ukuran_barang_konstruksi' => 'nullable|string|max:255',
-            'satuan' => 'required|string|max:255',
-            'keadaan_barang' => 'required|in:Baik,Kurang Baik,Rusak Berat',
+            'satuan' => 'required|string|max:100',
+            'keadaan_barang' => ['required', Rule::in(['Baik', 'Kurang Baik', 'Rusak Berat'])],
             'jumlah_barang' => 'required|integer|min:1',
             'harga_satuan' => 'required|numeric|min:0',
-            'bukti_barang' => 'nullable|string|max:255',
-            'bukti_berita' => 'nullable|string|max:255',
+            'bukti_barang' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'bukti_berita' => 'nullable|mimes:pdf|max:10240',
+            'kode_barang' => 'required|string',
         ]);
 
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
-
         try {
-            DB::beginTransaction();
+            return DB::transaction(function () use ($validated, $aset, $request) {
+                // Handle file uploads
+                if ($request->hasFile('bukti_barang')) {
+                    // Delete old file if exists
+                    if ($aset->bukti_barang) {
+                        Storage::disk('public')->delete('bukti_barang/' . $aset->bukti_barang);
+                    }
 
-            // Check if sub_sub_rincian_objek_id changed, regenerate kode if needed
-            $kodeBarang = $aset->kode_barang;
-            if ($aset->sub_sub_rincian_objek_id != $request->sub_sub_rincian_objek_id) {
-                $kodeBarang = $this->generateKodeBarang($request->sub_sub_rincian_objek_id);
-            }
+                    $fileName = time() . '_' . $request->file('bukti_barang')->getClientOriginalName();
+                    $request->file('bukti_barang')->storeAs('bukti_barang', $fileName, 'public');
+                    $validated['bukti_barang'] = $fileName;
+                } else {
+                    unset($validated['bukti_barang']);
+                }
 
-            $aset->update([
-                'sub_sub_rincian_objek_id' => $request->sub_sub_rincian_objek_id,
-                'kode_barang' => $kodeBarang,
-                'nama_bidang_barang' => $request->nama_bidang_barang,
-                'register' => $request->register,
-                'nama_jenis_barang' => $request->nama_jenis_barang,
-                'merk_type' => $request->merk_type,
-                'no_sertifikat' => $request->no_sertifikat,
-                'no_plat_kendaraan' => $request->no_plat_kendaraan,
-                'no_pabrik' => $request->no_pabrik,
-                'no_casis' => $request->no_casis,
-                'bahan' => $request->bahan,
-                'asal_perolehan' => $request->asal_perolehan,
-                'ukuran_barang_konstruksi' => $request->ukuran_barang_konstruksi,
-                'satuan' => $request->satuan,
-                'keadaan_barang' => $request->keadaan_barang,
-                'jumlah_barang' => $request->jumlah_barang,
-                'harga_satuan' => $request->harga_satuan,
-                'bukti_barang' => $request->bukti_barang,
-                'bukti_berita' => $request->bukti_berita,
-            ]);
+                if ($request->hasFile('bukti_berita')) {
+                    // Delete old file if exists
+                    if ($aset->bukti_berita) {
+                        Storage::disk('public')->delete('bukti_berita/' . $aset->bukti_berita);
+                    }
 
-            DB::commit();
+                    $fileName = time() . '_' . $request->file('bukti_berita')->getClientOriginalName();
+                    $request->file('bukti_berita')->storeAs('bukti_berita', $fileName, 'public');
+                    $validated['bukti_berita'] = $fileName;
+                } else {
+                    unset($validated['bukti_berita']);
+                }
 
-            return redirect()->route('asets.index')
-                ->with('success', 'Aset berhasil diperbarui.');
+                // Remove hierarchy fields that are not part of the asets table
+                unset(
+                    $validated['akun_id'],
+                    $validated['kelompok_id'],
+                    $validated['jenis_id'],
+                    $validated['objek_id'],
+                    $validated['rincian_objek_id'],
+                    $validated['sub_rincian_objek_id']
+                );
+
+                $aset->update($validated);
+
+                return redirect()->route('asets.index')
+                    ->with('success', 'Aset berhasil diperbarui');
+            });
         } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Error updating aset: ' . $e->getMessage());
+            Log::error('Error updating aset: ' . $e->getMessage(), [
+                'aset_id' => $aset->id,
+                'request' => $validated,
+                'trace' => $e->getTraceAsString()
+            ]);
 
             return redirect()->back()
                 ->with('error', 'Terjadi kesalahan saat memperbarui data aset.')
@@ -250,21 +236,36 @@ class AsetController extends Controller
         }
     }
 
+
     /**
      * Remove the specified resource from storage.
      */
     public function destroy(Aset $aset): RedirectResponse
     {
         try {
+            // Delete associated files
+            if ($aset->bukti_barang) {
+                Storage::disk('public')->delete('bukti_barang/' . $aset->bukti_barang);
+            }
+            if ($aset->bukti_berita) {
+                Storage::disk('public')->delete('bukti_berita/' . $aset->bukti_berita);
+            }
+
             $aset->delete();
+
             return redirect()->route('asets.index')
-                ->with('success', 'Aset berhasil dihapus.');
+                ->with('success', 'Aset berhasil dihapus');
         } catch (\Exception $e) {
-            Log::error('Error deleting aset: ' . $e->getMessage());
+            Log::error('Error deleting aset: ' . $e->getMessage(), [
+                'aset_id' => $aset->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return redirect()->back()
-                ->with('error', 'Terjadi kesalahan saat menghapus data aset.');
+                ->with('error', 'Terjadi kesalahan saat menghapus aset.');
         }
     }
+
 
     // ===================================
     // DROPDOWN API METHODS
@@ -273,7 +274,7 @@ class AsetController extends Controller
     /**
      * Get kelompoks by akun_id
      */
-    public function getKelompoks($akunId): JsonResponse
+    public function getKelompoks(int $akunId): JsonResponse
     {
         try {
             $kelompoks = Kelompok::where('akun_id', $akunId)
@@ -285,7 +286,8 @@ class AsetController extends Controller
                 'data' => $kelompoks
             ]);
         } catch (\Exception $e) {
-            Log::error('Error getting kelompoks: ' . $e->getMessage());
+            Log::error('Error getting kelompoks: ' . $e->getMessage(), ['akun_id' => $akunId]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat mengambil data kelompok.'
@@ -296,7 +298,7 @@ class AsetController extends Controller
     /**
      * Get jenis by kelompok_id
      */
-    public function getJenis($kelompokId): JsonResponse
+    public function getJenis(int $kelompokId): JsonResponse
     {
         try {
             $jenis = Jenis::where('kelompok_id', $kelompokId)
@@ -308,7 +310,8 @@ class AsetController extends Controller
                 'data' => $jenis
             ]);
         } catch (\Exception $e) {
-            Log::error('Error getting jenis: ' . $e->getMessage());
+            Log::error('Error getting jenis: ' . $e->getMessage(), ['kelompok_id' => $kelompokId]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat mengambil data jenis.'
@@ -319,7 +322,7 @@ class AsetController extends Controller
     /**
      * Get objeks by jenis_id
      */
-    public function getObjeks($jenisId): JsonResponse
+    public function getObjeks(int $jenisId): JsonResponse
     {
         try {
             $objeks = Objek::where('jenis_id', $jenisId)
@@ -331,7 +334,8 @@ class AsetController extends Controller
                 'data' => $objeks
             ]);
         } catch (\Exception $e) {
-            Log::error('Error getting objeks: ' . $e->getMessage());
+            Log::error('Error getting objeks: ' . $e->getMessage(), ['jenis_id' => $jenisId]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat mengambil data objek.'
@@ -342,7 +346,7 @@ class AsetController extends Controller
     /**
      * Get rincian objeks by objek_id
      */
-    public function getRincianObjeks($objekId): JsonResponse
+    public function getRincianObjeks(int $objekId): JsonResponse
     {
         try {
             $rincianObjeks = RincianObjek::where('objek_id', $objekId)
@@ -354,7 +358,8 @@ class AsetController extends Controller
                 'data' => $rincianObjeks
             ]);
         } catch (\Exception $e) {
-            Log::error('Error getting rincian objeks: ' . $e->getMessage());
+            Log::error('Error getting rincian objeks: ' . $e->getMessage(), ['objek_id' => $objekId]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat mengambil data rincian objek.'
@@ -365,7 +370,7 @@ class AsetController extends Controller
     /**
      * Get sub rincian objeks by rincian_objek_id
      */
-    public function getSubRincianObjeks($rincianObjekId): JsonResponse
+    public function getSubRincianObjeks(int $rincianObjekId): JsonResponse
     {
         try {
             $subRincianObjeks = SubRincianObjek::where('rincian_objek_id', $rincianObjekId)
@@ -377,7 +382,8 @@ class AsetController extends Controller
                 'data' => $subRincianObjeks
             ]);
         } catch (\Exception $e) {
-            Log::error('Error getting sub rincian objeks: ' . $e->getMessage());
+            Log::error('Error getting sub rincian objeks: ' . $e->getMessage(), ['rincian_objek_id' => $rincianObjekId]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat mengambil data sub rincian objek.'
@@ -388,7 +394,7 @@ class AsetController extends Controller
     /**
      * Get sub sub rincian objeks by sub_rincian_objek_id
      */
-    public function getSubSubRincianObjeks($subRincianObjekId): JsonResponse
+    public function getSubSubRincianObjeks(int $subRincianObjekId): JsonResponse
     {
         try {
             $subSubRincianObjeks = SubSubRincianObjek::where('sub_rincian_objek_id', $subRincianObjekId)
@@ -400,63 +406,12 @@ class AsetController extends Controller
                 'data' => $subSubRincianObjeks
             ]);
         } catch (\Exception $e) {
-            Log::error('Error getting sub sub rincian objeks: ' . $e->getMessage());
+            Log::error('Error getting sub sub rincian objeks: ' . $e->getMessage(), ['sub_rincian_objek_id' => $subRincianObjekId]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat mengambil data sub sub rincian objek.'
             ], 500);
-        }
-    }
-
-    /**
-     * Generate kode barang otomatis berdasarkan hierarki
-     * Format: 1.2.5.01.05.01.01.001
-     */
-    private function generateKodeBarang($subSubRincianObjekId): string
-    {
-        try {
-            // Get hierarchy data
-            $subSubRincianObjek = SubSubRincianObjek::with([
-                'subRincianObjek.rincianObjek.objek.jenis.kelompok.akun'
-            ])->findOrFail($subSubRincianObjekId);
-
-            $akun = $subSubRincianObjek->subRincianObjek->rincianObjek->objek->jenis->kelompok->akun;
-            $kelompok = $subSubRincianObjek->subRincianObjek->rincianObjek->objek->jenis->kelompok;
-            $jenis = $subSubRincianObjek->subRincianObjek->rincianObjek->objek->jenis;
-            $objek = $subSubRincianObjek->subRincianObjek->rincianObjek->objek;
-            $rincianObjek = $subSubRincianObjek->subRincianObjek->rincianObjek;
-            $subRincianObjek = $subSubRincianObjek->subRincianObjek;
-
-            // Get next sequence number for this sub_sub_rincian_objek
-            $lastAset = Aset::where('sub_sub_rincian_objek_id', $subSubRincianObjekId)
-                ->orderBy('id', 'desc')
-                ->first();
-
-            $nextSequence = 1;
-            if ($lastAset) {
-                $lastKode = $lastAset->kode_barang;
-                $parts = explode('.', $lastKode);
-                $lastSequence = intval(end($parts));
-                $nextSequence = $lastSequence + 1;
-            }
-
-            // Build kode barang
-            $kodeBarang = sprintf(
-                '%s.%s.%s.%s.%s.%s.%s.%03d',
-                $akun->kode,
-                $kelompok->kode,
-                $jenis->kode,
-                $objek->kode,
-                $rincianObjek->kode,
-                $subRincianObjek->kode,
-                $subSubRincianObjek->kode,
-                $nextSequence
-            );
-
-            return $kodeBarang;
-        } catch (\Exception $e) {
-            Log::error('Error generating kode barang: ' . $e->getMessage());
-            throw new \Exception('Gagal generate kode barang');
         }
     }
 
@@ -466,27 +421,83 @@ class AsetController extends Controller
     public function generateKodeBarangPreview(Request $request): JsonResponse
     {
         try {
-            $subSubRincianObjekId = $request->input('sub_sub_rincian_objek_id');
+            $request->validate([
+                'sub_sub_rincian_objek_id' => 'required|exists:sub_sub_rincian_objeks,id'
+            ]);
 
-            if (!$subSubRincianObjekId) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Sub Sub Rincian Objek ID required'
-                ], 400);
-            }
-
-            $kodeBarang = $this->generateKodeBarang($subSubRincianObjekId);
+            $kodeBarang = $this->generateKodeBarang($request->sub_sub_rincian_objek_id);
 
             return response()->json([
                 'success' => true,
                 'kode_barang' => $kodeBarang
             ]);
         } catch (\Exception $e) {
-            Log::error('Error generating kode barang preview: ' . $e->getMessage());
+            Log::error('Error generating kode barang preview: ' . $e->getMessage(), [
+                'sub_sub_rincian_objek_id' => $request->input('sub_sub_rincian_objek_id')
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal generate kode barang'
+                'message' => 'Gagal generate kode barang: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    // ===================================
+    // PRIVATE HELPER METHODS
+    // ===================================
+
+    /**
+     * Generate kode barang otomatis berdasarkan hierarki
+     * Format: 1.2.5.01.05.01.01.001
+     */
+    private function generateKodeBarang(int $subSubRincianObjekId): string
+    {
+        $subSubRincianObjek = SubSubRincianObjek::with([
+            'subRincianObjek.rincianObjek.objek.jenis.kelompok.akun'
+        ])->findOrFail($subSubRincianObjekId);
+
+        $hierarchy = $this->extractHierarchyFromSubSubRincianObjek($subSubRincianObjek);
+
+        // Get next sequence number for this sub_sub_rincian_objek
+        $nextSequence = Aset::where('sub_sub_rincian_objek_id', $subSubRincianObjekId)
+            ->max(DB::raw('CAST(SUBSTRING_INDEX(kode_barang, ".", -1) AS UNSIGNED)')) + 1;
+
+        // Build kode barang
+        return sprintf(
+            '%s.%s.%s.%s.%s.%s.%s.%03d',
+            $hierarchy['akun']->kode,
+            $hierarchy['kelompok']->kode,
+            $hierarchy['jenis']->kode,
+            $hierarchy['objek']->kode,
+            $hierarchy['rincianObjek']->kode,
+            $hierarchy['subRincianObjek']->kode,
+            $hierarchy['subSubRincianObjek']->kode,
+            $nextSequence
+        );
+    }
+
+    /**
+     * Extract hierarchy from aset for editing
+     */
+    private function extractHierarchy(Aset $aset): array
+    {
+        return $this->extractHierarchyFromSubSubRincianObjek($aset->subSubRincianObjek);
+    }
+
+    /**
+     * Extract hierarchy from SubSubRincianObjek
+     */
+    private function extractHierarchyFromSubSubRincianObjek(SubSubRincianObjek $subSubRincianObjek): array
+    {
+        return [
+            'akun' => $subSubRincianObjek->subRincianObjek->rincianObjek->objek->jenis->kelompok->akun,
+            'kelompok' => $subSubRincianObjek->subRincianObjek->rincianObjek->objek->jenis->kelompok,
+            'jenis' => $subSubRincianObjek->subRincianObjek->rincianObjek->objek->jenis,
+            'objek' => $subSubRincianObjek->subRincianObjek->rincianObjek->objek,
+            'rincianObjek' => $subSubRincianObjek->subRincianObjek->rincianObjek,
+            'subRincianObjek' => $subSubRincianObjek->subRincianObjek,
+            'subSubRincianObjek' => $subSubRincianObjek,
+        ];
     }
 }

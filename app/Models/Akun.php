@@ -9,6 +9,7 @@ class Akun extends Model
 {
     use HasFactory;
 
+    protected $table = 'akuns';
     protected $fillable = ['kode', 'nama'];
 
     public function kelompoks()

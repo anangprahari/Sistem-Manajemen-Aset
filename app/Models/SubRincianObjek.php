@@ -9,6 +9,7 @@ class SubRincianObjek extends Model
 {
     use HasFactory;
 
+    protected $table = 'sub_rincian_objeks';
     protected $fillable = ['rincian_objek_id', 'kode', 'nama'];
 
     public function rincianObjek()
