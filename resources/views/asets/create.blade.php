@@ -220,6 +220,11 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
         }
 
+        .auto-filled {
+            background-color: #f0f9ff !important;
+            border-color: #0891b2 !important;
+        }
+
         @media (max-width: 768px) {
             .form-container {
                 margin: 1rem;
@@ -382,6 +387,12 @@
                                 <label class="form-label">Asal Perolehan <span class="required-field">*</span></label>
                                 <input type="text" class="form-control" name="asal_perolehan" required 
                                        placeholder="Masukkan asal perolehan">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Tahun Perolehan <span class="required-field">*</span></label>
+                                <input type="number" class="form-control" name="tahun_perolehan" min="1900" max="{{ date('Y') }}" required 
+                                    placeholder="Masukkan tahun perolehan">
                             </div>
                         </div>
                         
@@ -597,9 +608,23 @@
             updateKodeBarang();
         });
         
-        document.getElementById('sub_rincian_objek')?.addEventListener('change', function() {
+       document.getElementById('sub_rincian_objek')?.addEventListener('change', function() {
             const subRincianObjekId = this.value;
             selectedHierarchy.subRincianObjek = getSelectedOption(this);
+            
+            // Auto-fill Nama Bidang Barang
+            if (selectedHierarchy.subRincianObjek && selectedHierarchy.subRincianObjek.nama) {
+                const namaBidangBarangInput = document.querySelector('input[name="nama_bidang_barang"]');
+                if (namaBidangBarangInput) {
+                    namaBidangBarangInput.value = selectedHierarchy.subRincianObjek.nama;
+                }
+            } else {
+                // Clear field jika tidak ada pilihan
+                const namaBidangBarangInput = document.querySelector('input[name="nama_bidang_barang"]');
+                if (namaBidangBarangInput) {
+                    namaBidangBarangInput.value = '';
+                }
+            }
             
             if (subRincianObjekId) {
                 loadSubSubRincianObjeks(subRincianObjekId);
@@ -883,10 +908,18 @@
                 if (selectedHierarchy[key]) {
                     delete selectedHierarchy[key];
                 }
+                
+                // Clear Nama Bidang Barang jika sub_rincian_objek di-reset
+                if (id === 'sub_rincian_objek') {
+                    const namaBidangBarangInput = document.querySelector('input[name="nama_bidang_barang"]');
+                    if (namaBidangBarangInput) {
+                        namaBidangBarangInput.value = '';
+                    }
+                }
             }
         });
     }
-    
+        
     function resetAllDropdowns() {
         resetDropdowns(['kelompok', 'jenis', 'objek', 'rincian_objek', 'sub_rincian_objek', 'sub_sub_rincian_objek']);
         hideKodePreview();

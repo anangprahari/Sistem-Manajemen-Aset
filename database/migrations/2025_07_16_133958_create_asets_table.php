@@ -25,6 +25,7 @@ return new class extends Migration
             $table->string('no_casis')->nullable();
             $table->string('bahan')->nullable();
             $table->string('asal_perolehan');
+            $table->string('tahun_perolehan');
             $table->string('ukuran_barang_konstruksi')->nullable();
             $table->string('satuan');
             $table->enum('keadaan_barang', ['Baik', 'Kurang Baik', 'Rusak Berat']);

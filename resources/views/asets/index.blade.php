@@ -20,9 +20,9 @@
         <table class="table table-bordered table-striped table-hover align-middle">
             <thead class="table-dark text-center">
                 <tr>
-                    <th>#</th>
-                    <th>Kode Barang</th>
+                    <th>No</th>
                     <th>Nama Bidang Barang</th>
+                    <th>Kode Barang</th>
                     <th>Register</th>
                     <th>Nama Jenis Barang</th>
                     <th>Merk / Type</th>
@@ -32,6 +32,7 @@
                     <th>No. Casis</th>
                     <th>Bahan</th>
                     <th>Asal Perolehan</th>
+                    <th>Tahun Perolehan</th>
                     <th>Ukuran Barang / Konstruksi</th>
                     <th>Satuan</th>
                     <th>Keadaan Barang</th>
@@ -40,9 +41,6 @@
                     <th>Total Harga</th>
                     <th>Bukti Barang</th>
                     <th>Bukti Berita</th>
-                    <th>Kode Sub Sub Rincian Objek</th>
-                    <th>Nama Barang (SubSub)</th>
-                    <th>Akun</th>
                     <th>Aksi</th>
                 </tr>
             </thead>
@@ -50,8 +48,8 @@
                 @forelse($asets as $index => $aset)
                     <tr>
                         <td class="text-center">{{ ($asets->currentPage() - 1) * $asets->perPage() + $index + 1 }}</td>
-                        <td>{{ $aset->kode_barang }}</td>
                         <td>{{ $aset->nama_bidang_barang }}</td>
+                        <td>{{ $aset->kode_barang }}</td>
                         <td>{{ $aset->register }}</td>
                         <td>{{ $aset->nama_jenis_barang }}</td>
                         <td>{{ $aset->merk_type ?? '-' }}</td>
@@ -61,6 +59,7 @@
                         <td>{{ $aset->no_casis ?? '-' }}</td>
                         <td>{{ $aset->bahan ?? '-' }}</td>
                         <td>{{ $aset->asal_perolehan }}</td>
+                        <td class="text-center">{{ $aset->tahun_perolehan }}</td>
                         <td>{{ $aset->ukuran_barang_konstruksi ?? '-' }}</td>
                         <td class="text-center">{{ $aset->satuan }}</td>
                         <td class="text-center">
@@ -85,9 +84,6 @@
                                 -
                             @endif
                         </td>
-                        <td>{{ $aset->subSubRincianObjek->kode ?? '-' }}</td>
-                        <td>{{ $aset->subSubRincianObjek->nama_barang ?? '-' }}</td>
-                        <td>{{ $aset->subSubRincianObjek->subRincianObjek->rincianObjek->objek->jenis->kelompok->akun->nama ?? '-' }}</td>
                         <td class="text-center">
                             <a href="{{ route('asets.show', $aset->id) }}" class="btn btn-sm btn-info">Lihat</a>
                             <a href="{{ route('asets.edit', $aset->id) }}" class="btn btn-sm btn-warning">Edit</a>

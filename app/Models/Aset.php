@@ -23,6 +23,7 @@ class Aset extends Model
         'no_casis',
         'bahan',
         'asal_perolehan',
+        'tahun_perolehan',
         'ukuran_barang_konstruksi',
         'satuan',
         'keadaan_barang',
