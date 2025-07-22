@@ -75,7 +75,7 @@ class AsetController extends Controller
             'ukuran_barang_konstruksi' => 'nullable|string|max:255',
             'satuan' => 'required|string|max:100',
             'keadaan_barang' => ['required', Rule::in(['Baik', 'Kurang Baik', 'Rusak Berat'])],
-            'jumlah_barang' => 'required|integer|min:1',
+            'jumlah_barang' => 'required|integer|min:1|max:100',
             'harga_satuan' => 'required|numeric|min:0',
             'bukti_barang' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'bukti_berita' => 'nullable|mimes:pdf|max:10240',
@@ -85,33 +85,69 @@ class AsetController extends Controller
         try {
             return DB::transaction(function () use ($validated, $request) {
                 // Handle file uploads
+                $buktiBarangFileName = null;
+                $buktiBeritaFileName = null;
+
                 if ($request->hasFile('bukti_barang')) {
-                    $fileName = time() . '_' . $request->file('bukti_barang')->getClientOriginalName();
-                    $request->file('bukti_barang')->storeAs('bukti_barang', $fileName, 'public');
-                    $validated['bukti_barang'] = $fileName;
+                    $buktiBarangFileName = 'bukti_barang_' . time() . '.' . $request->file('bukti_barang')->extension();
+                    $request->file('bukti_barang')->storeAs('bukti_barang', $buktiBarangFileName, 'public');
                 }
 
                 if ($request->hasFile('bukti_berita')) {
-                    $fileName = time() . '_' . $request->file('bukti_berita')->getClientOriginalName();
-                    $request->file('bukti_berita')->storeAs('bukti_berita', $fileName, 'public');
-                    $validated['bukti_berita'] = $fileName;
+                    $buktiBeritaFileName = 'bukti_berita_' . time() . '.' . $request->file('bukti_berita')->extension();
+                    $request->file('bukti_berita')->storeAs('bukti_berita', $buktiBeritaFileName, 'public');
                 }
 
-                // Remove hierarchy fields that are not part of the asets table
-                $asetData = $validated;
-                unset(
-                    $asetData['akun_id'],
-                    $asetData['kelompok_id'],
-                    $asetData['jenis_id'],
-                    $asetData['objek_id'],
-                    $asetData['rincian_objek_id'],
-                    $asetData['sub_rincian_objek_id']
-                );
+                // Prepare base data (data yang sama untuk semua item)
+                $baseData = [
+                    'sub_sub_rincian_objek_id' => $validated['sub_sub_rincian_objek_id'],
+                    'nama_bidang_barang' => $validated['nama_bidang_barang'],
+                    'nama_jenis_barang' => $validated['nama_jenis_barang'],
+                    'merk_type' => $validated['merk_type'],
+                    'no_sertifikat' => $validated['no_sertifikat'],
+                    'no_plat_kendaraan' => $validated['no_plat_kendaraan'],
+                    'no_pabrik' => $validated['no_pabrik'],
+                    'no_casis' => $validated['no_casis'],
+                    'bahan' => $validated['bahan'],
+                    'asal_perolehan' => $validated['asal_perolehan'],
+                    'tahun_perolehan' => $validated['tahun_perolehan'],
+                    'ukuran_barang_konstruksi' => $validated['ukuran_barang_konstruksi'],
+                    'satuan' => $validated['satuan'],
+                    'keadaan_barang' => $validated['keadaan_barang'],
+                    'jumlah_barang' => 1, // Setiap record individual memiliki jumlah 1
+                    'harga_satuan' => $validated['harga_satuan'],
+                ];
 
-                $aset = Aset::create($asetData);
+                $jumlahBarang = (int)$validated['jumlah_barang'];
+                $baseRegister = $validated['register'];
+                $baseKodeBarang = $validated['kode_barang'];
+                $createdAssets = [];
 
-                return redirect()->route('asets.index')
-                    ->with('success', "Aset berhasil ditambahkan dengan kode: {$validated['kode_barang']}");
+                // Buat multiple assets berdasarkan jumlah_barang
+                for ($i = 1; $i <= $jumlahBarang; $i++) {
+                    $assetData = $baseData;
+                    $sequence = str_pad($i, 3, '0', STR_PAD_LEFT); // 001, 002, 003, dst
+
+                    // Generate register berurutan
+                    $assetData['register'] = $this->generateSequentialIdentifier($baseRegister, $sequence);
+
+                    // Kode barang TETAP SAMA untuk semua asset
+                    $assetData['kode_barang'] = $baseKodeBarang;
+
+                    // SEMUA asset mendapat file attachment
+                    $assetData['bukti_barang'] = $buktiBarangFileName;
+                    $assetData['bukti_berita'] = $buktiBeritaFileName;
+
+                    $createdAsset = Aset::create($assetData);
+                    $createdAssets[] = $createdAsset->register; // Ubah ke register untuk pesan
+                }
+
+                $message = $jumlahBarang > 1
+                    ? "Berhasil menambahkan {$jumlahBarang} aset. Register: " . implode(', ', array_slice($createdAssets, 0, 3)) .
+                    ($jumlahBarang > 3 ? ' dan ' . ($jumlahBarang - 3) . ' lainnya' : '')
+                    : "Aset berhasil ditambahkan dengan register: {$createdAssets[0]}";
+
+                return redirect()->route('asets.index')->with('success', $message);
             });
         } catch (\Exception $e) {
             Log::error('Error creating aset: ' . $e->getMessage(), [
@@ -120,7 +156,7 @@ class AsetController extends Controller
             ]);
 
             return redirect()->back()
-                ->with('error', 'Terjadi kesalahan saat menyimpan data aset.')
+                ->with('error', 'Terjadi kesalahan saat menyimpan data aset: ' . $e->getMessage())
                 ->withInput();
         }
     }
@@ -161,7 +197,12 @@ class AsetController extends Controller
             'sub_rincian_objek_id' => 'required|exists:sub_rincian_objeks,id',
             'sub_sub_rincian_objek_id' => 'required|exists:sub_sub_rincian_objeks,id',
             'nama_bidang_barang' => 'required|string|max:255',
-            'register' => 'required|string|max:255',
+            'register' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('asets')->ignore($aset->id)
+            ],
             'nama_jenis_barang' => 'required|string|max:255',
             'merk_type' => 'nullable|string|max:255',
             'no_sertifikat' => 'nullable|string|max:255',
@@ -178,23 +219,27 @@ class AsetController extends Controller
             'harga_satuan' => 'required|numeric|min:0',
             'bukti_barang' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'bukti_berita' => 'nullable|mimes:pdf|max:10240',
-            'kode_barang' => 'required|string',
+            'kode_barang' => [
+                'required',
+                'string',
+                Rule::unique('asets')->ignore($aset->id)
+            ],
         ]);
 
         try {
-            return DB::transaction(function () use ($validated, $aset, $request) {
-                // Handle file uploads
+            return DB::transaction(function () use ($validated, $request, $aset) {
+                // Handle file uploads and deletions
+                $fileUpdates = [];
+
                 if ($request->hasFile('bukti_barang')) {
                     // Delete old file if exists
                     if ($aset->bukti_barang) {
                         Storage::disk('public')->delete('bukti_barang/' . $aset->bukti_barang);
                     }
 
-                    $fileName = time() . '_' . $request->file('bukti_barang')->getClientOriginalName();
+                    $fileName = 'bukti_barang_' . time() . '.' . $request->file('bukti_barang')->extension();
                     $request->file('bukti_barang')->storeAs('bukti_barang', $fileName, 'public');
-                    $validated['bukti_barang'] = $fileName;
-                } else {
-                    unset($validated['bukti_barang']);
+                    $fileUpdates['bukti_barang'] = $fileName;
                 }
 
                 if ($request->hasFile('bukti_berita')) {
@@ -203,24 +248,24 @@ class AsetController extends Controller
                         Storage::disk('public')->delete('bukti_berita/' . $aset->bukti_berita);
                     }
 
-                    $fileName = time() . '_' . $request->file('bukti_berita')->getClientOriginalName();
+                    $fileName = 'bukti_berita_' . time() . '.' . $request->file('bukti_berita')->extension();
                     $request->file('bukti_berita')->storeAs('bukti_berita', $fileName, 'public');
-                    $validated['bukti_berita'] = $fileName;
-                } else {
-                    unset($validated['bukti_berita']);
+                    $fileUpdates['bukti_berita'] = $fileName;
                 }
 
-                // Remove hierarchy fields that are not part of the asets table
+                // Prepare update data
+                $updateData = array_merge($validated, $fileUpdates);
                 unset(
-                    $validated['akun_id'],
-                    $validated['kelompok_id'],
-                    $validated['jenis_id'],
-                    $validated['objek_id'],
-                    $validated['rincian_objek_id'],
-                    $validated['sub_rincian_objek_id']
+                    $updateData['akun_id'],
+                    $updateData['kelompok_id'],
+                    $updateData['jenis_id'],
+                    $updateData['objek_id'],
+                    $updateData['rincian_objek_id'],
+                    $updateData['sub_rincian_objek_id']
                 );
 
-                $aset->update($validated);
+                // Update the asset
+                $aset->update($updateData);
 
                 return redirect()->route('asets.index')
                     ->with('success', 'Aset berhasil diperbarui');
@@ -228,12 +273,11 @@ class AsetController extends Controller
         } catch (\Exception $e) {
             Log::error('Error updating aset: ' . $e->getMessage(), [
                 'aset_id' => $aset->id,
-                'request' => $validated,
                 'trace' => $e->getTraceAsString()
             ]);
 
             return redirect()->back()
-                ->with('error', 'Terjadi kesalahan saat memperbarui data aset.')
+                ->with('error', 'Terjadi kesalahan saat memperbarui data aset: ' . $e->getMessage())
                 ->withInput();
         }
     }
@@ -268,7 +312,42 @@ class AsetController extends Controller
         }
     }
 
+    private function generateSequentialIdentifier($base, $sequence, $isKodeBarang = false)
+    {
+        if ($isKodeBarang) {
+            // Untuk kode_barang, tambahkan sequence di akhir dengan separator
+            return $base . '.' . $sequence;
+        } else {
+            // Untuk register, pastikan format 3 digit berurutan
+            // Hapus suffix angka jika ada, lalu tambahkan sequence baru
+            $cleanBase = preg_replace('/\d+$/', '', $base);
+            return $cleanBase . $sequence;
+        }
+    }
 
+    private function cleanRegisterNumber(string $register): string
+    {
+        // Hapus suffix angka 3 digit jika ada
+        return preg_replace('/\d{3}$/', '', $register);
+    }
+
+    /**
+     * Generate unique kode barang with sequence
+     */
+    private function generateUniqueRegister($baseRegister, $sequence)
+    {
+        $newRegister = $this->generateSequentialIdentifier($baseRegister, $sequence);
+
+        // Cek apakah register sudah ada
+        while (Aset::where('register', $newRegister)->exists()) {
+            // Jika sudah ada, increment sequence
+            $sequenceNum = (int)$sequence + 1;
+            $sequence = str_pad($sequenceNum, 3, '0', STR_PAD_LEFT);
+            $newRegister = $this->generateSequentialIdentifier($baseRegister, $sequence);
+        }
+
+        return $newRegister;
+    }
     // ===================================
     // DROPDOWN API METHODS
     // ===================================
