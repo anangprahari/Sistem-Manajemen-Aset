@@ -179,15 +179,42 @@ class AsetController extends Controller
 
         // Extract hierarchy untuk form
         $hierarchy = $this->extractHierarchy($aset);
+        
+        // Get all dropdown data based on current selections
         $akuns = Akun::orderBy('nama')->get();
+        $kelompoks = Kelompok::where('akun_id', $hierarchy['akun']->id)->orderBy('nama')->get();
+        $jenis = Jenis::where('kelompok_id', $hierarchy['kelompok']->id)->orderBy('nama')->get();
+        $objeks = Objek::where('jenis_id', $hierarchy['jenis']->id)->orderBy('nama')->get();
+        $rincianObjeks = RincianObjek::where('objek_id', $hierarchy['objek']->id)->orderBy('nama')->get();
+        $subRincianObjeks = SubRincianObjek::where('rincian_objek_id', $hierarchy['rincianObjek']->id)->orderBy('nama')->get();
+        $subSubRincianObjeks = SubSubRincianObjek::where('sub_rincian_objek_id', $hierarchy['subRincianObjek']->id)->orderBy('nama_barang')->get();
 
-        return view('asets.edit', compact('aset', 'hierarchy', 'akuns'));
+        return view('asets.edit', compact(
+            'aset', 
+            'hierarchy', 
+            'akuns', 
+            'kelompoks', 
+            'jenis', 
+            'objeks', 
+            'rincianObjeks', 
+            'subRincianObjeks', 
+            'subSubRincianObjeks'
+        ));
     }
+    
+    /**
+     * Update the specified resource in storage.
+     */
     /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, Aset $aset): RedirectResponse
     {
+        Log::info('Update request received', [
+            'aset_id' => $aset->id,
+            'request_data' => $request->except(['bukti_barang', 'bukti_berita'])
+        ]);
+
         $validated = $request->validate([
             'akun_id' => 'required|exists:akuns,id',
             'kelompok_id' => 'required|exists:kelompoks,id',
@@ -215,7 +242,7 @@ class AsetController extends Controller
             'ukuran_barang_konstruksi' => 'nullable|string|max:255',
             'satuan' => 'required|string|max:100',
             'keadaan_barang' => ['required', Rule::in(['Baik', 'Kurang Baik', 'Rusak Berat'])],
-            'jumlah_barang' => 'required|integer|min:1',
+            'jumlah_barang' => 'required|integer|min:1|max:100',
             'harga_satuan' => 'required|numeric|min:0',
             'bukti_barang' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'bukti_berita' => 'nullable|mimes:pdf|max:10240',
@@ -224,55 +251,124 @@ class AsetController extends Controller
                 'string',
                 Rule::unique('asets')->ignore($aset->id)
             ],
+        ], [
+            'akun_id.required' => 'Akun harus dipilih',
+            'kelompok_id.required' => 'Kelompok harus dipilih',
+            'jenis_id.required' => 'Jenis harus dipilih',
+            'objek_id.required' => 'Objek harus dipilih',
+            'rincian_objek_id.required' => 'Rincian objek harus dipilih',
+            'sub_rincian_objek_id.required' => 'Sub rincian objek harus dipilih',
+            'sub_sub_rincian_objek_id.required' => 'Sub sub rincian objek harus dipilih',
+            'register.unique' => 'Register sudah digunakan',
+            'kode_barang.unique' => 'Kode barang sudah digunakan',
+            'tahun_perolehan.digits' => 'Tahun perolehan harus 4 digit',
+            'tahun_perolehan.max' => 'Tahun perolehan tidak boleh melebihi tahun sekarang',
+            'jumlah_barang.max' => 'Jumlah barang maksimal 100',
+            'bukti_barang.max' => 'Ukuran file gambar maksimal 2MB',
+            'bukti_berita.max' => 'Ukuran file PDF maksimal 10MB',
         ]);
+
+        Log::info('Validation passed', ['validated_data' => array_keys($validated)]);
 
         try {
             return DB::transaction(function () use ($validated, $request, $aset) {
-                // Handle file uploads and deletions
                 $fileUpdates = [];
 
+                // Handle bukti_barang upload
                 if ($request->hasFile('bukti_barang')) {
-                    // Delete old file if exists
-                    if ($aset->bukti_barang) {
-                        Storage::disk('public')->delete('bukti_barang/' . $aset->bukti_barang);
-                    }
+                    $file = $request->file('bukti_barang');
+                    if ($file->isValid()) {
+                        // Delete old file if exists
+                        if ($aset->bukti_barang && Storage::disk('public')->exists('bukti_barang/' . $aset->bukti_barang)) {
+                            Storage::disk('public')->delete('bukti_barang/' . $aset->bukti_barang);
+                            Log::info('Old bukti_barang deleted', ['filename' => $aset->bukti_barang]);
+                        }
 
-                    $fileName = 'bukti_barang_' . time() . '.' . $request->file('bukti_barang')->extension();
-                    $request->file('bukti_barang')->storeAs('bukti_barang', $fileName, 'public');
-                    $fileUpdates['bukti_barang'] = $fileName;
+                        $fileName = 'bukti_barang_' . $aset->id . '_' . time() . '.' . $file->extension();
+                        $file->storeAs('bukti_barang', $fileName, 'public');
+                        $fileUpdates['bukti_barang'] = $fileName;
+                        Log::info('Bukti barang uploaded', ['filename' => $fileName]);
+                    } else {
+                        Log::error('Invalid bukti_barang file');
+                        throw new \Exception('File bukti barang tidak valid');
+                    }
                 }
 
+                // Handle bukti_berita upload
                 if ($request->hasFile('bukti_berita')) {
-                    // Delete old file if exists
-                    if ($aset->bukti_berita) {
-                        Storage::disk('public')->delete('bukti_berita/' . $aset->bukti_berita);
-                    }
+                    $file = $request->file('bukti_berita');
+                    if ($file->isValid()) {
+                        // Delete old file if exists
+                        if ($aset->bukti_berita && Storage::disk('public')->exists('bukti_berita/' . $aset->bukti_berita)) {
+                            Storage::disk('public')->delete('bukti_berita/' . $aset->bukti_berita);
+                            Log::info('Old bukti_berita deleted', ['filename' => $aset->bukti_berita]);
+                        }
 
-                    $fileName = 'bukti_berita_' . time() . '.' . $request->file('bukti_berita')->extension();
-                    $request->file('bukti_berita')->storeAs('bukti_berita', $fileName, 'public');
-                    $fileUpdates['bukti_berita'] = $fileName;
+                        $fileName = 'bukti_berita_' . $aset->id . '_' . time() . '.' . $file->extension();
+                        $file->storeAs('bukti_berita', $fileName, 'public');
+                        $fileUpdates['bukti_berita'] = $fileName;
+                        Log::info('Bukti berita uploaded', ['filename' => $fileName]);
+                    } else {
+                        Log::error('Invalid bukti_berita file');
+                        throw new \Exception('File bukti berita tidak valid');
+                    }
                 }
 
                 // Prepare update data
-                $updateData = array_merge($validated, $fileUpdates);
-                unset(
-                    $updateData['akun_id'],
-                    $updateData['kelompok_id'],
-                    $updateData['jenis_id'],
-                    $updateData['objek_id'],
-                    $updateData['rincian_objek_id'],
-                    $updateData['sub_rincian_objek_id']
-                );
+                $updateData = [
+                    'sub_sub_rincian_objek_id' => $validated['sub_sub_rincian_objek_id'],
+                    'nama_bidang_barang' => $validated['nama_bidang_barang'],
+                    'register' => $validated['register'],
+                    'kode_barang' => $validated['kode_barang'],
+                    'nama_jenis_barang' => $validated['nama_jenis_barang'],
+                    'merk_type' => $validated['merk_type'],
+                    'no_sertifikat' => $validated['no_sertifikat'],
+                    'no_plat_kendaraan' => $validated['no_plat_kendaraan'],
+                    'no_pabrik' => $validated['no_pabrik'],
+                    'no_casis' => $validated['no_casis'],
+                    'bahan' => $validated['bahan'],
+                    'asal_perolehan' => $validated['asal_perolehan'],
+                    'tahun_perolehan' => $validated['tahun_perolehan'],
+                    'ukuran_barang_konstruksi' => $validated['ukuran_barang_konstruksi'],
+                    'satuan' => $validated['satuan'],
+                    'keadaan_barang' => $validated['keadaan_barang'],
+                    'jumlah_barang' => $validated['jumlah_barang'],
+                    'harga_satuan' => $validated['harga_satuan'],
+                ];
+
+                // Merge file updates
+                $updateData = array_merge($updateData, $fileUpdates);
+
+                // Log data before update
+                Log::info('Attempting to update asset', ['aset_id' => $aset->id, 'update_data' => $updateData]);
 
                 // Update the asset
-                $aset->update($updateData);
+                $updated = $aset->update($updateData);
+
+                // Check if update was successful
+                if (!$updated) {
+                    Log::error('Failed to update asset', ['aset_id' => $aset->id]);
+                    throw new \Exception('Gagal mengupdate data aset');
+                }
+
+                Log::info('Asset updated successfully', ['aset_id' => $aset->id]);
 
                 return redirect()->route('asets.index')
                     ->with('success', 'Aset berhasil diperbarui');
             });
-        } catch (\Exception $e) {
-            Log::error('Error updating aset: ' . $e->getMessage(), [
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation error in update', [
                 'aset_id' => $aset->id,
+                'errors' => $e->errors()
+            ]);
+
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput();
+        } catch (\Exception $e) {
+            Log::error('Error updating aset', [
+                'aset_id' => $aset->id,
+                'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
 
@@ -281,7 +377,6 @@ class AsetController extends Controller
                 ->withInput();
         }
     }
-
 
     /**
      * Remove the specified resource from storage.

@@ -10,240 +10,356 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.7.32/sweetalert2.min.css" rel="stylesheet">
      <style>
         :root {
-            --primary-color: #2563eb;
-            --secondary-color: #64748b;
-            --success-color: #059669;
-            --danger-color: #dc2626;
-            --warning-color: #d97706;
-            --info-color: #0891b2;
-            --light-color: #f8fafc;
-            --dark-color: #1e293b;
-        }
+    --primary-color: #2563eb;
+    --secondary-color: #64748b;
+    --success-color: #059669;
+    --danger-color: #dc2626;
+    --warning-color: #d97706;
+    --info-color: #0891b2;
+    --light-color: #f8fafc;
+    --dark-color: #1e293b;
+}
 
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+body {
+    background: linear-gradient(135deg, #5973e8 0%, #a3afe8 100%);
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
 
-        .main-container {
-            padding: 2rem 0;
-        }
+.main-container {
+    padding: 1.5rem 0;
+}
 
-        .form-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 2.5rem;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+.form-container {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 18px;
+    padding: 2rem;
+    box-shadow: 0 18px 38px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    max-width: 1200px;
+    margin: 0 auto;
+}
 
-        .form-container h2 {
-            color: var(--primary-color);
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
+.form-container h2 {
+    color: var(--primary-color);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
 
-        .dropdown-section {
-            background: var(--light-color);
-            border-radius: 15px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            border: 1px solid #e2e8f0;
-        }
+.dropdown-section {
+    background: var(--light-color);
+    border-radius: 14px;
+    padding: 1.5rem;
+    margin-bottom: 1.8rem;
+    border: 1px solid #e2e8f0;
+}
 
-        .dropdown-section h4 {
-            color: var(--primary-color);
-            font-weight: 600;
-            margin-bottom: 1.5rem;
-            border-bottom: 2px solid var(--primary-color);
-            padding-bottom: 0.5rem;
-        }
+.dropdown-section h4 {
+    color: var(--primary-color);
+    font-weight: 600;
+    margin-bottom: 1.3rem;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 0.4rem;
+}
 
-        .dropdown-item {
-            margin-bottom: 1.5rem;
-            position: relative;
-        }
+/* Layout untuk dropdown hierarki */
+.dropdown-row-1 {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
 
-        .dropdown-label {
-            font-weight: 600;
-            color: var(--dark-color);
-            margin-bottom: 0.5rem;
-            display: block;
-        }
+.dropdown-row-2 {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
 
-        .required-field {
-            color: var(--danger-color);
-            font-weight: bold;
-        }
+.dropdown-row-3 {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0;
+}
 
-        .form-select, .form-control {
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            padding: 0.75rem 1rem;
-            transition: all 0.3s ease;
-            font-size: 0.95rem;
-        }
+.dropdown-item {
+    position: relative;
+}
 
-        .form-select:focus, .form-control:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25);
-            outline: none;
-        }
+/* Untuk baris 1-2-3 (tiga kolom sama lebar) */
+.dropdown-row-1 .dropdown-item {
+    flex: 1;
+}
 
-        .form-select:disabled {
-            background-color: #f1f5f9;
-            opacity: 0.7;
-        }
+/* Untuk baris 4-5-6 (tiga kolom sama lebar) */
+.dropdown-row-2 .dropdown-item {
+    flex: 1;
+}
 
-        .loading {
-            display: none;
-            color: var(--primary-color);
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            z-index: 10;
-        }
+/* Untuk baris 7 (satu kolom di tengah, lebar 33%) */
+.dropdown-row-3 .dropdown-item {
+    flex: 0 0 33.33%;
+    max-width: 350px;
+}
 
-        .error-message {
-            display: none;
-            color: var(--danger-color);
-            font-size: 0.875rem;
-            margin-top: 0.25rem;
-            font-weight: 500;
-        }
+.dropdown-label {
+    font-weight: 600;
+    color: var(--dark-color);
+    margin-bottom: 0.4rem;
+    display: block;
+    font-size: 0.9rem;
+}
 
-        .hierarchy-display {
-            background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
-            border: 2px solid var(--info-color);
-            border-radius: 15px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
+.required-field {
+    color: var(--danger-color);
+    font-weight: bold;
+}
 
-        .hierarchy-display h6 {
-            color: var(--info-color);
-            font-weight: 600;
-            margin-bottom: 1rem;
-        }
+.form-select, .form-control {
+    border: 2px solid #e2e8f0;
+    border-radius: 9px;
+    padding: 0.65rem 0.9rem;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    width: 100%;
+}
 
-        .hierarchy-item {
-            background: white;
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
-            margin-bottom: 0.5rem;
-            border-left: 4px solid var(--info-color);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
+.form-select:focus, .form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.18rem rgba(37, 99, 235, 0.25);
+    outline: none;
+}
 
-        .hierarchy-level {
-            font-weight: 600;
-            color: var(--primary-color);
-        }
+.form-select:disabled {
+    background-color: #f1f5f9;
+    opacity: 0.7;
+}
 
-        .kode-preview {
-            background: linear-gradient(135deg, #dcfce7 0%, #f0fdf4 100%);
-            border: 2px solid var(--success-color);
-            border-radius: 15px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            text-align: center;
-            display: none;
-        }
+.loading {
+    display: none;
+    color: var(--primary-color);
+    position: absolute;
+    right: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+}
 
-        .kode-preview i {
-            color: var(--success-color);
-            margin-right: 0.5rem;
-            font-size: 1.2rem;
-        }
+.error-message {
+    display: none;
+    color: var(--danger-color);
+    font-size: 0.82rem;
+    margin-top: 0.22rem;
+    font-weight: 500;
+}
 
-        #kode-barang-text {
-            font-weight: 700;
-            font-size: 1.1rem;
-            color: var(--success-color);
-            font-family: 'Courier New', monospace;
-        }
+.hierarchy-display {
+    background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
+    border: 2px solid var(--info-color);
+    border-radius: 14px;
+    padding: 1.3rem;
+    margin-bottom: 1.8rem;
+}
 
-        .section-card {
-            background: white;
-            border-radius: 15px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        }
+.hierarchy-display h6 {
+    color: var(--info-color);
+    font-weight: 600;
+    margin-bottom: 0.9rem;
+}
 
-        .section-title {
-            color: var(--primary-color);
-            font-weight: 600;
-            margin-bottom: 1.5rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid #e2e8f0;
-        }
+.hierarchy-item {
+    background: white;
+    padding: 0.65rem 0.9rem;
+    border-radius: 7px;
+    margin-bottom: 0.45rem;
+    border-left: 4px solid var(--info-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
 
-        .btn {
-            border-radius: 10px;
-            padding: 0.75rem 1.5rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
+.hierarchy-level {
+    font-weight: 600;
+    color: var(--primary-color);
+}
 
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary-color) 0%, #3b82f6 100%);
-            border: none;
-            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
-        }
+.kode-preview {
+    background: linear-gradient(135deg, #dcfce7 0%, #f0fdf4 100%);
+    border: 2px solid var(--success-color);
+    border-radius: 14px;
+    padding: 1.3rem;
+    margin-bottom: 1.8rem;
+    text-align: center;
+    display: none;
+}
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
-        }
+.kode-preview i {
+    color: var(--success-color);
+    margin-right: 0.5rem;
+    font-size: 1.15rem;
+}
 
-        .btn-secondary {
-            background: linear-gradient(135deg, var(--secondary-color) 0%, #6b7280 100%);
-            border: none;
-            box-shadow: 0 4px 15px rgba(100, 116, 139, 0.3);
-        }
+#kode-barang-text {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--success-color);
+    font-family: 'Courier New', monospace;
+}
 
-        .btn-secondary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(100, 116, 139, 0.4);
-        }
+.section-card {
+    background: white;
+    border-radius: 14px;
+    padding: 1.8rem;
+    margin-bottom: 1.8rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
 
-        .alert {
-            border-radius: 10px;
-            border: none;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        }
+.section-title {
+    color: var(--primary-color);
+    font-weight: 600;
+    margin-bottom: 1.3rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 2px solid #e2e8f0;
+}
 
-        .auto-filled {
-            background-color: #f0f9ff !important;
-            border-color: #0891b2 !important;
-        }
+.btn {
+    border-radius: 9px;
+    padding: 0.65rem 1.3rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
 
-        @media (max-width: 768px) {
-            .form-container {
-                margin: 1rem;
-                padding: 1.5rem;
-            }
-            
-            .dropdown-section, .section-card {
-                padding: 1.5rem;
-            }
-        }
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #3b82f6 100%);
+    border: none;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+}
 
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
-        }
+.btn-primary:hover {
+    transform: translateY(-1.5px);
+    box-shadow: 0 5px 18px rgba(37, 99, 235, 0.4);
+}
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+.btn-secondary {
+    background: linear-gradient(135deg, var(--secondary-color) 0%, #6b7280 100%);
+    border: none;
+    box-shadow: 0 4px 14px rgba(100, 116, 139, 0.3);
+}
+
+.btn-secondary:hover {
+    transform: translateY(-1.5px);
+    box-shadow: 0 5px 18px rgba(100, 116, 139, 0.4);
+}
+
+.alert {
+    border-radius: 9px;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.auto-filled {
+    background-color: #f0f9ff !important;
+    border-color: #0891b2 !important;
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+    .dropdown-row-1,
+    .dropdown-row-2 {
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+    
+    .dropdown-row-3 .dropdown-item {
+        flex: 0 0 50%;
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .form-container {
+        margin: 1rem;
+        padding: 1.3rem;
+    }
+    
+    .dropdown-section {
+        padding: 1.2rem;
+    }
+    
+    .dropdown-row-1,
+    .dropdown-row-2,
+    .dropdown-row-3 {
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+    
+    .dropdown-row-3 .dropdown-item {
+        flex: 1;
+        max-width: 100%;
+    }
+    
+    .section-card {
+        padding: 1.3rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .main-container {
+        padding: 1rem 0;
+    }
+    
+    .form-container {
+        margin: 0.5rem;
+        padding: 1rem;
+    }
+    
+    .dropdown-section {
+        padding: 1rem;
+    }
+    
+    .section-card {
+        padding: 1rem;
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.4s ease-in;
+}
+
+@keyframes fadeIn {
+    from { 
+        opacity: 0; 
+        transform: translateY(15px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}
+
+/* Utility classes */
+.text-center {
+    text-align: center;
+}
+
+.mb-3 {
+    margin-bottom: 1rem;
+}
+
+.mb-4 {
+    margin-bottom: 1.5rem;
+}
+
+.mt-3 {
+    margin-top: 1rem;
+}
+
+.text-muted {
+    color: #6c757d;
+}
+
+.text-primary {
+    color: var(--primary-color);
+}
     </style>
 </head>
 <body>
@@ -260,243 +376,273 @@
     @csrf
                 
                 <!-- Dropdown Hierarki Section -->
-                <div class="dropdown-section">
-                    <h4 class="mb-3">
-                        <i class="fas fa-sitemap"></i> Pilih Hierarki Aset
-                    </h4>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="dropdown-item">
-                                <label class="dropdown-label">1. Akun <span class="required-field">*</span></label>
-                                <select class="form-select" id="akun" name="akun_id" required>
-                                    <option value="">Pilih Akun</option>
-                                    <option value="1" data-kode="01">01 - Aset Lancar</option>
-                                    <option value="2" data-kode="02">02 - Investasi Jangka Panjang</option>
-                                    <option value="3" data-kode="03">03 - Aset Tetap</option>
-                                    <option value="4" data-kode="04">04 - Dana Cadangan</option>
-                                </select>
-                                <i class="fas fa-spinner fa-spin loading" id="loading-akun"></i>
-                                <div class="error-message" id="error-akun"></div>
-                            </div>
-                            
-                            <div class="dropdown-item">
-                                <label class="dropdown-label">2. Kelompok <span class="required-field">*</span></label>
-                                <select class="form-select" id="kelompok" name="kelompok_id" disabled required>
-                                    <option value="">Pilih Kelompok</option>
-                                </select>
-                                <i class="fas fa-spinner fa-spin loading" id="loading-kelompok"></i>
-                                <div class="error-message" id="error-kelompok"></div>
-                            </div>
-                            
-                            <div class="dropdown-item">
-                                <label class="dropdown-label">3. Jenis <span class="required-field">*</span></label>
-                                <select class="form-select" id="jenis" name="jenis_id" disabled required>
-                                    <option value="">Pilih Jenis</option>
-                                </select>
-                                <i class="fas fa-spinner fa-spin loading" id="loading-jenis"></i>
-                                <div class="error-message" id="error-jenis"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <div class="dropdown-item">
-                                <label class="dropdown-label">4. Objek <span class="required-field">*</span></label>
-                                <select class="form-select" id="objek" name="objek_id" disabled required>
-                                    <option value="">Pilih Objek</option>
-                                </select>
-                                <i class="fas fa-spinner fa-spin loading" id="loading-objek"></i>
-                                <div class="error-message" id="error-objek"></div>
-                            </div>
-                            
-                            <div class="dropdown-item">
-                                <label class="dropdown-label">5. Rincian Objek <span class="required-field">*</span></label>
-                                <select class="form-select" id="rincian_objek" name="rincian_objek_id" disabled required>
-                                    <option value="">Pilih Rincian Objek</option>
-                                </select>
-                                <i class="fas fa-spinner fa-spin loading" id="loading-rincian-objek"></i>
-                                <div class="error-message" id="error-rincian-objek"></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row mt-3">
-                        <div class="col-md-6">
-                            <div class="dropdown-item">
-                                <label class="dropdown-label">6. Sub Rincian Objek <span class="required-field">*</span></label>
-                                <select class="form-select" id="sub_rincian_objek" name="sub_rincian_objek_id" disabled required>
-                                    <option value="">Pilih Sub Rincian Objek</option>
-                                </select>
-                                <i class="fas fa-spinner fa-spin loading" id="loading-sub-rincian-objek"></i>
-                                <div class="error-message" id="error-sub-rincian-objek"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <div class="dropdown-item">
-                                <label class="dropdown-label">7. Sub Sub Rincian Objek <span class="required-field">*</span></label>
-                                <select class="form-select" id="sub_sub_rincian_objek" name="sub_sub_rincian_objek_id" disabled required>
-                                    <option value="">Pilih Sub Sub Rincian Objek</option>
-                                </select>
-                                <i class="fas fa-spinner fa-spin loading" id="loading-sub-sub-rincian-objek"></i>
-                                <div class="error-message" id="error-sub-sub-rincian-objek"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Display Hierarki yang dipilih -->
-                <div class="hierarchy-display fade-in" id="hierarchy-display" style="display: none;">
-                    <h6><i class="fas fa-list"></i> Hierarki Yang Dipilih:</h6>
-                    <div id="hierarchy-content"></div>
-                </div>
-                
-                <!-- Kode Barang Preview -->
-                <div class="kode-preview fade-in" id="kode-preview">
-                    <i class="fas fa-barcode"></i> Kode Barang: <span id="kode-barang-text">-</span>
-                    <input type="hidden" name="kode_barang" id="kode_barang">
-                </div>
-                
-                <!-- Informasi Dasar Aset -->
-                <div class="section-card">
-                    <h4 class="section-title">
-                        <i class="fas fa-info-circle"></i> Informasi Dasar Aset
-                    </h4>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Nama Bidang Barang <span class="required-field">*</span></label>
-                                <input type="text" class="form-control" name="nama_bidang_barang" required 
-                                       placeholder="Masukkan nama bidang barang">
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label">Register <span class="required-field">*</span></label>
-                                <input type="text" class="form-control" name="register" required 
-                                       placeholder="Masukkan nomor register">
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label">Nama Jenis Barang <span class="required-field">*</span></label>
-                                <input type="text" class="form-control" name="nama_jenis_barang" required 
-                                       placeholder="Masukkan nama jenis barang">
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label">Asal Perolehan <span class="required-field">*</span></label>
-                                <input type="text" class="form-control" name="asal_perolehan" required 
-                                       placeholder="Masukkan asal perolehan">
-                            </div>
+               <div class="dropdown-section">
+    <h4 class="mb-3">
+        <i class="fas fa-sitemap"></i> Pilih Hierarki Aset
+    </h4>
 
-                            <div class="mb-3">
-                                <label class="form-label">Tahun Perolehan <span class="required-field">*</span></label>
-                                <input type="number" class="form-control" name="tahun_perolehan" min="1900" max="{{ date('Y') }}" required 
-                                    placeholder="Masukkan tahun perolehan">
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Satuan <span class="required-field">*</span></label>
-                                <input type="text" class="form-control" name="satuan" required 
-                                       placeholder="Contoh: Unit, Buah, Set">
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label">Keadaan Barang <span class="required-field">*</span></label>
-                                <select class="form-select" name="keadaan_barang" required>
-                                    <option value="">Pilih Keadaan Barang</option>
-                                    <option value="Baik">Baik</option>
-                                    <option value="Kurang Baik">Kurang Baik</option>
-                                    <option value="Rusak Berat">Rusak Berat</option>
-                                </select>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label">Jumlah Barang <span class="required-field">*</span></label>
-                                <input type="number" class="form-control" name="jumlah_barang" min="1" required 
-                                       placeholder="Masukkan jumlah barang">
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label">Harga Satuan <span class="required-field">*</span></label>
-                                <input type="number" class="form-control" name="harga_satuan" min="0" step="0.01" required 
-                                       placeholder="Masukkan harga satuan">
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="dropdown-item">
+                <label class="dropdown-label">1. Akun <span class="required-field">*</span></label>
+                <select class="form-select" id="akun" name="akun_id" required>
+                    <option value="">Pilih Akun</option>
+                    <option value="1" data-kode="01">01 - Aset Lancar</option>
+                    <option value="2" data-kode="02">02 - Investasi Jangka Panjang</option>
+                    <option value="3" data-kode="03">03 - Aset Tetap</option>
+                    <option value="4" data-kode="04">04 - Dana Cadangan</option>
+                </select>
+                <i class="fas fa-spinner fa-spin loading" id="loading-akun"></i>
+                <div class="error-message" id="error-akun"></div>
+            </div>
+        </div>
 
-                <!-- Informasi Tambahan -->
-                <div class="section-card">
-                    <h4 class="section-title">
-                        <i class="fas fa-plus-circle"></i> Informasi Tambahan
-                    </h4>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Merk / Type</label>
-                                <input type="text" class="form-control" name="merk_type" 
-                                       placeholder="Masukkan merk atau type barang">
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label">No. Sertifikat</label>
-                                <input type="text" class="form-control" name="no_sertifikat" 
-                                       placeholder="Masukkan nomor sertifikat">
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label">No. Plat Kendaraan</label>
-                                <input type="text" class="form-control" name="no_plat_kendaraan" 
-                                       placeholder="Masukkan nomor plat kendaraan">
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label">No. Pabrik</label>
-                                <input type="text" class="form-control" name="no_pabrik" 
-                                       placeholder="Masukkan nomor pabrik">
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">No. Casis</label>
-                                <input type="text" class="form-control" name="no_casis" 
-                                       placeholder="Masukkan nomor casis">
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label">Bahan</label>
-                                <input type="text" class="form-control" name="bahan" 
-                                       placeholder="Masukkan bahan barang">
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label">Ukuran Barang / Konstruksi</label>
-                                <input type="text" class="form-control" name="ukuran_barang_konstruksi" 
-                                       placeholder="Masukkan ukuran barang atau konstruksi">
-                            </div>
-                            
-                          <div class="mb-3">
-    <label class="form-label">Bukti Barang</label>
-    <input type="file" class="form-control" name="bukti_barang" 
-           accept="image/jpeg,image/png,image/jpg,image/gif">
-    <small class="text-muted">Format: JPG, PNG, GIF. Maksimal 2MB</small>
+        <div class="col-md-4">
+            <div class="dropdown-item">
+                <label class="dropdown-label">2. Kelompok <span class="required-field">*</span></label>
+                <select class="form-select" id="kelompok" name="kelompok_id" disabled required>
+                    <option value="">Pilih Kelompok</option>
+                </select>
+                <i class="fas fa-spinner fa-spin loading" id="loading-kelompok"></i>
+                <div class="error-message" id="error-kelompok"></div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="dropdown-item">
+                <label class="dropdown-label">3. Jenis <span class="required-field">*</span></label>
+                <select class="form-select" id="jenis" name="jenis_id" disabled required>
+                    <option value="">Pilih Jenis</option>
+                </select>
+                <i class="fas fa-spinner fa-spin loading" id="loading-jenis"></i>
+                <div class="error-message" id="error-jenis"></div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mt-3">
+            <div class="dropdown-item">
+                <label class="dropdown-label">4. Objek <span class="required-field">*</span></label>
+                <select class="form-select" id="objek" name="objek_id" disabled required>
+                    <option value="">Pilih Objek</option>
+                </select>
+                <i class="fas fa-spinner fa-spin loading" id="loading-objek"></i>
+                <div class="error-message" id="error-objek"></div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mt-3">
+            <div class="dropdown-item">
+                <label class="dropdown-label">5. Rincian Objek <span class="required-field">*</span></label>
+                <select class="form-select" id="rincian_objek" name="rincian_objek_id" disabled required>
+                    <option value="">Pilih Rincian Objek</option>
+                </select>
+                <i class="fas fa-spinner fa-spin loading" id="loading-rincian-objek"></i>
+                <div class="error-message" id="error-rincian-objek"></div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mt-3">
+            <div class="dropdown-item">
+                <label class="dropdown-label">6. Sub Rincian Objek <span class="required-field">*</span></label>
+                <select class="form-select" id="sub_rincian_objek" name="sub_rincian_objek_id" disabled required>
+                    <option value="">Pilih Sub Rincian Objek</option>
+                </select>
+                <i class="fas fa-spinner fa-spin loading" id="loading-sub-rincian-objek"></i>
+                <div class="error-message" id="error-sub-rincian-objek"></div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mt-3">
+            <div class="dropdown-item">
+                <label class="dropdown-label">7. Sub Sub Rincian Objek <span class="required-field">*</span></label>
+                <select class="form-select" id="sub_sub_rincian_objek" name="sub_sub_rincian_objek_id" disabled required>
+                    <option value="">Pilih Sub Sub Rincian Objek</option>
+                </select>
+                <i class="fas fa-spinner fa-spin loading" id="loading-sub-sub-rincian-objek"></i>
+                <div class="error-message" id="error-sub-sub-rincian-objek"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Display Hierarki yang dipilih -->
+<div class="hierarchy-display fade-in" id="hierarchy-display" style="display: none;">
+    <h6><i class="fas fa-list"></i> Hierarki Yang Dipilih:</h6>
+    <div id="hierarchy-content"></div>
 </div>
 
-<div class="mb-3">
-    <label class="form-label">Bukti Berita</label>
-    <input type="file" class="form-control" name="bukti_berita" 
-           accept="application/pdf">
-    <small class="text-muted">Format: PDF. Maksimal 10MB</small>
+<!-- Kode Barang Preview -->
+<div class="kode-preview fade-in" id="kode-preview">
+    <i class="fas fa-barcode"></i> Kode Barang: <span id="kode-barang-text">-</span>
+    <input type="hidden" name="kode_barang" id="kode_barang">
 </div>
-                        </div>
-                    </div>
-                </div>
-                
+
+<!-- Informasi Dasar Aset -->
+<div class="section-card">
+    <h4 class="section-title">
+        <i class="fas fa-info-circle"></i> Informasi Dasar Aset
+    </h4>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label class="form-label">Nama Bidang Barang <span class="required-field">*</span></label>
+                <input type="text" class="form-control" name="nama_bidang_barang" required 
+                       placeholder="Masukkan nama bidang barang">
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label class="form-label">Register <span class="required-field">*</span></label>
+                <input type="text" class="form-control" name="register" required 
+                       placeholder="Masukkan nomor register">
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label class="form-label">Nama Jenis Barang <span class="required-field">*</span></label>
+                <input type="text" class="form-control" name="nama_jenis_barang" required 
+                       placeholder="Masukkan nama jenis barang">
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label class="form-label">Asal Perolehan <span class="required-field">*</span></label>
+                <input type="text" class="form-control" name="asal_perolehan" required 
+                       placeholder="Masukkan asal perolehan">
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label class="form-label">Tahun Perolehan <span class="required-field">*</span></label>
+                <input type="number" class="form-control" name="tahun_perolehan" min="1900" max="{{ date('Y') }}" required 
+                    placeholder="Masukkan tahun perolehan">
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label class="form-label">Satuan <span class="required-field">*</span></label>
+                <input type="text" class="form-control" name="satuan" required 
+                       placeholder="Contoh: Unit, Buah, Set">
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label class="form-label">Keadaan Barang <span class="required-field">*</span></label>
+                <select class="form-select" name="keadaan_barang" required>
+                    <option value="">Pilih Keadaan Barang</option>
+                    <option value="Baik">Baik</option>
+                    <option value="Kurang Baik">Kurang Baik</option>
+                    <option value="Rusak Berat">Rusak Berat</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label class="form-label">Jumlah Barang <span class="required-field">*</span></label>
+                <input type="number" class="form-control" name="jumlah_barang" min="1" required 
+                       placeholder="Masukkan jumlah barang">
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label class="form-label">Harga Satuan <span class="required-field">*</span></label>
+                <input type="number" class="form-control" name="harga_satuan" min="0" step="0.01" required 
+                       placeholder="Masukkan harga satuan">
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Informasi Tambahan -->
+<div class="section-card">
+    <h4 class="section-title">
+        <i class="fas fa-plus-circle"></i> Informasi Tambahan
+    </h4>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label class="form-label">Merk / Type</label>
+                <input type="text" class="form-control" name="merk_type" 
+                       placeholder="Masukkan merk atau type barang">
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label class="form-label">No. Sertifikat</label>
+                <input type="text" class="form-control" name="no_sertifikat" 
+                       placeholder="Masukkan nomor sertifikat">
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label class="form-label">No. Plat Kendaraan</label>
+                <input type="text" class="form-control" name="no_plat_kendaraan" 
+                       placeholder="Masukkan nomor plat kendaraan">
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label class="form-label">No. Pabrik</label>
+                <input type="text" class="form-control" name="no_pabrik" 
+                       placeholder="Masukkan nomor pabrik">
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label class="form-label">No. Casis</label>
+                <input type="text" class="form-control" name="no_casis" 
+                       placeholder="Masukkan nomor casis">
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label class="form-label">Bahan</label>
+                <input type="text" class="form-control" name="bahan" 
+                       placeholder="Masukkan bahan barang">
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label class="form-label">Ukuran Barang / Konstruksi</label>
+                <input type="text" class="form-control" name="ukuran_barang_konstruksi" 
+                       placeholder="Masukkan ukuran barang atau konstruksi">
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label class="form-label">Bukti Barang</label>
+                <input type="file" class="form-control" name="bukti_barang" 
+                       accept="image/jpeg,image/png,image/jpg,image/gif">
+                <small class="text-muted">Format: JPG, PNG, GIF. Maksimal 2MB</small>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label class="form-label">Bukti Berita</label>
+                <input type="file" class="form-control" name="bukti_berita" 
+                       accept="application/pdf">
+                <small class="text-muted">Format: PDF. Maksimal 10MB</small>
+            </div>
+        </div>
+    </div>
+</div>
+
                 <!-- Action Buttons -->
                 <div class="text-center mt-4">
                     <button type="button" class="btn btn-secondary me-3" onclick="goBack()">
