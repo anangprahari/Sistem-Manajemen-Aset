@@ -1,893 +1,1234 @@
-@extends('layouts.tabler')
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Aset</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.7.32/sweetalert2.min.css" rel="stylesheet">
+    <style>
+        /* Modern Glassmorphism & Soft UI Theme */
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #64748b;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #0ea5e9;
+            --light: #f8fafc;
+            --dark: #1e293b;
+            --card-bg: rgba(255,255,255,0.85);
+            --border-radius: 16px;
+            --shadow: 0 8px 32px 0 rgba(37,99,235,0.12);
+            --shadow-hover: 0 12px 40px 0 rgba(37,99,235,0.18);
+            --transition: all 0.25s cubic-bezier(.4,0,.2,1);
+        }
 
-@section('title', 'Edit Aset')
+        body {
+            background: linear-gradient(120deg, #e0e7ff 0%, #f1f5f9 100%);
+            min-height: 100vh;
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--dark);
+        }
 
-@section('content')
-<div class="container mx-auto px-6 py-8">
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-8">
-        <div>
-            <h1 class="text-3xl font-bold text-gray-900">Edit Aset</h1>
-            <p class="text-gray-600 mt-2">Ubah informasi aset yang sudah ada</p>
+        .main-container {
+            padding: 2rem 0;
+        }
+
+        .form-container {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 2.5rem 2rem;
+            max-width: 1100px;
+            margin: 0 auto;
+            border: 1px solid #e0e7ff;
+            backdrop-filter: blur(12px);
+            transition: var(--transition);
+        }
+
+        .form-container:hover {
+            box-shadow: var(--shadow-hover);
+            transform: translateY(-2px) scale(1.01);
+        }
+
+        .form-container h2 {
+            color: var(--primary);
+            font-weight: 800;
+            letter-spacing: 0.02em;
+            margin-bottom: 0.5rem;
+        }
+
+        .dropdown-section {
+            background: var(--light);
+            border-radius: var(--border-radius);
+            padding: 1.5rem 1rem;
+            margin-bottom: 2rem;
+            border: 1px solid #e0e7ff;
+            box-shadow: 0 2px 8px rgba(37,99,235,0.06);
+        }
+
+        .dropdown-section h4 {
+            color: var(--primary);
+            font-weight: 700;
+            margin-bottom: 1.2rem;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 0.4rem;
+            font-size: 1.15rem;
+        }
+
+        .dropdown-row-1, .dropdown-row-2, .dropdown-row-3 {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .dropdown-row-3 {
+            justify-content: center;
+            margin-bottom: 0;
+        }
+
+        .dropdown-item {
+            flex: 1 1 220px;
+            position: relative;
+            min-width: 180px;
+        }
+
+        .dropdown-label {
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 0.4rem;
+            font-size: 0.95rem;
+            display: block;
+        }
+
+        .required-field {
+            color: var(--danger);
+            font-weight: bold;
+        }
+
+        .form-select, .form-control {
+            border: 2px solid #e0e7ff;
+            border-radius: 10px;
+            padding: 0.7rem 1rem;
+            font-size: 1rem;
+            background: rgba(248,250,252,0.85);
+            transition: var(--transition);
+            box-shadow: 0 1px 4px rgba(37,99,235,0.04);
+        }
+
+        .form-select:focus, .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(37,99,235,0.12);
+            outline: none;
+        }
+
+        .form-select:disabled {
+            background-color: #f1f5f9;
+            opacity: 0.7;
+        }
+
+        .loading {
+            display: none;
+            color: var(--primary);
+            position: absolute;
+            right: 13px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+        }
+
+        .error-message {
+            display: none;
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin-top: 0.22rem;
+            font-weight: 500;
+        }
+
+        .hierarchy-display {
+            background: linear-gradient(120deg, #e0f2fe 0%, #f0f9ff 100%);
+            border: 2px solid var(--info);
+            border-radius: var(--border-radius);
+            padding: 1.2rem 1rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(14,165,233,0.08);
+        }
+
+        .hierarchy-display h6 {
+            color: var(--info);
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+            font-size: 1rem;
+        }
+
+        .hierarchy-item {
+            background: white;
+            padding: 0.65rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.45rem;
+            border-left: 4px solid var(--info);
+            padding: 0.65rem 0.9rem;
+            border-radius: 7px;
+            margin-bottom: 0.45rem;
+            border-left: 4px solid var(--info-color);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .hierarchy-level {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .kode-preview {
+            background: linear-gradient(135deg, #dcfce7 0%, #f0fdf4 100%);
+            border: 2px solid var(--success-color);
+            border-radius: 14px;
+            padding: 1.3rem;
+            margin-bottom: 1.8rem;
+            text-align: center;
+            display: none;
+        }
+
+        .kode-preview i {
+            color: var(--success-color);
+            margin-right: 0.5rem;
+            font-size: 1.15rem;
+        }
+
+        #kode-barang-text {
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: var(--success-color);
+            font-family: 'Courier New', monospace;
+        }
+
+        .section-card {
+            background: white;
+            border-radius: 14px;
+            padding: 1.8rem;
+            margin-bottom: 1.8rem;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .section-title {
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 1.3rem;
+            padding-bottom: 0.4rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .btn {
+            border-radius: 9px;
+            padding: 0.65rem 1.3rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #3b82f6 100%);
+            border: none;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1.5px);
+            box-shadow: 0 5px 18px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, #6b7280 100%);
+            border: none;
+            box-shadow: 0 4px 14px rgba(100, 116, 139, 0.3);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-1.5px);
+            box-shadow: 0 5px 18px rgba(100, 116, 139, 0.4);
+        }
+
+        .alert {
+            border-radius: 9px;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .auto-filled {
+            background-color: #f0f9ff !important;
+            border-color: #0891b2 !important;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .dropdown-row-1,
+            .dropdown-row-2 {
+                flex-direction: column;
+                gap: 0.8rem;
+            }
+
+            .dropdown-row-3 .dropdown-item {
+                flex: 0 0 50%;
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .form-container {
+                margin: 1rem;
+                padding: 1.3rem;
+            }
+
+            .dropdown-section {
+                padding: 1.2rem;
+            }
+
+            .dropdown-row-1,
+            .dropdown-row-2,
+            .dropdown-row-3 {
+                flex-direction: column;
+                gap: 0.8rem;
+            }
+
+            .dropdown-row-3 .dropdown-item {
+                flex: 1;
+                max-width: 100%;
+            }
+
+            .section-card {
+                padding: 1.3rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .main-container {
+                padding: 1rem 0;
+            }
+
+            .form-container {
+                margin: 0.5rem;
+                padding: 1rem;
+            }
+
+            .dropdown-section {
+                padding: 1rem;
+            }
+
+            .section-card {
+                padding: 1rem;
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Utility classes */
+        .text-center {
+            text-align: center;
+        }
+
+        .mb-3 {
+            margin-bottom: 1rem;
+        }
+
+        .mb-4 {
+            margin-bottom: 1.5rem;
+        }
+
+        .mt-3 {
+            margin-top: 1rem;
+        }
+
+        .text-muted {
+            color: #6c757d;
+        }
+
+        .text-primary {
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid main-container">
+        <div class="form-container">
+            <div class="text-center mb-4">
+                <h2>
+                    <i class="fas fa-edit text-primary"></i> Edit Aset
+                </h2>
+                <p class="text-muted">Perbarui informasi aset di bawah ini</p>
+            </div>
+
+            <form id="assetForm" method="POST" action="{{ route('asets.update', $aset->id) }}" enctype="multipart/form-data">
+                @csrf
+                @method('PUT') <!-- Method spoofing untuk PUT -->
+
+                <!-- Dropdown Hierarki Section -->
+                <div class="dropdown-section">
+                    <h4 class="mb-3">
+                        <i class="fas fa-sitemap"></i> Pilih Hierarki Aset
+                    </h4>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="dropdown-item">
+                                <label class="dropdown-label">1. Akun <span class="required-field">*</span></label>
+                                <select class="form-select" id="akun" name="akun_id" required>
+                                    <option value="">Pilih Akun</option>
+                                    @foreach ($akuns as $akun)
+                                        <option value="{{ $akun->id }}" data-kode="{{ $akun->kode }}" {{ (old('akun_id', $selectedHierarchy['akun']->id ?? '') == $akun->id) ? 'selected' : '' }}>
+                                            {{ $akun->kode }} - {{ $akun->nama }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <i class="fas fa-spinner fa-spin loading" id="loading-akun"></i>
+                                <div class="error-message" id="error-akun"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="dropdown-item">
+                                <label class="dropdown-label">2. Kelompok <span class="required-field">*</span></label>
+                                <select class="form-select" id="kelompok" name="kelompok_id" {{ empty($selectedHierarchy['kelompok']) ? 'disabled' : '' }} required>
+                                    <option value="">Pilih Kelompok</option>
+                                    @if(!empty($selectedHierarchy['kelompok']))
+                                        @foreach ($kelompoks as $kelompok)
+                                            <option value="{{ $kelompok->id }}" data-kode="{{ $kelompok->kode }}" {{ (old('kelompok_id', $selectedHierarchy['kelompok']->id ?? '') == $kelompok->id) ? 'selected' : '' }}>
+                                                {{ $kelompok->kode }} - {{ $kelompok->nama }}
+                                            </option>
+                                        @endforeach
+                                    @endif
+                                </select>
+                                <i class="fas fa-spinner fa-spin loading" id="loading-kelompok"></i>
+                                <div class="error-message" id="error-kelompok"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="dropdown-item">
+                                <label class="dropdown-label">3. Jenis <span class="required-field">*</span></label>
+                                <select class="form-select" id="jenis" name="jenis_id" {{ empty($selectedHierarchy['jenis']) ? 'disabled' : '' }} required>
+                                    <option value="">Pilih Jenis</option>
+                                    @if(!empty($selectedHierarchy['jenis']))
+                                        @foreach ($jeniss as $jenis)
+                                            <option value="{{ $jenis->id }}" data-kode="{{ $jenis->kode }}" {{ (old('jenis_id', $selectedHierarchy['jenis']->id ?? '') == $jenis->id) ? 'selected' : '' }}>
+                                                {{ $jenis->kode }} - {{ $jenis->nama }}
+                                            </option>
+                                        @endforeach
+                                    @endif
+                                </select>
+                                <i class="fas fa-spinner fa-spin loading" id="loading-jenis"></i>
+                                <div class="error-message" id="error-jenis"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mt-3">
+                            <div class="dropdown-item">
+                                <label class="dropdown-label">4. Objek <span class="required-field">*</span></label>
+                                <select class="form-select" id="objek" name="objek_id" {{ empty($selectedHierarchy['objek']) ? 'disabled' : '' }} required>
+                                    <option value="">Pilih Objek</option>
+                                    @if(!empty($selectedHierarchy['objek']))
+                                        @foreach ($objeks as $objek)
+                                            <option value="{{ $objek->id }}" data-kode="{{ $objek->kode }}" {{ (old('objek_id', $selectedHierarchy['objek']->id ?? '') == $objek->id) ? 'selected' : '' }}>
+                                                {{ $objek->kode }} - {{ $objek->nama }}
+                                            </option>
+                                        @endforeach
+                                    @endif
+                                </select>
+                                <i class="fas fa-spinner fa-spin loading" id="loading-objek"></i>
+                                <div class="error-message" id="error-objek"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mt-3">
+                            <div class="dropdown-item">
+                                <label class="dropdown-label">5. Rincian Objek <span class="required-field">*</span></label>
+                                <select class="form-select" id="rincian_objek" name="rincian_objek_id" {{ empty($selectedHierarchy['rincian_objek']) ? 'disabled' : '' }} required>
+                                    <option value="">Pilih Rincian Objek</option>
+                                    @if(!empty($selectedHierarchy['rincian_objek']))
+                                        @foreach ($rincianObjeks as $rincianObjek)
+                                            <option value="{{ $rincianObjek->id }}" data-kode="{{ $rincianObjek->kode }}" {{ (old('rincian_objek_id', $selectedHierarchy['rincian_objek']->id ?? '') == $rincianObjek->id) ? 'selected' : '' }}>
+                                                {{ $rincianObjek->kode }} - {{ $rincianObjek->nama }}
+                                            </option>
+                                        @endforeach
+                                    @endif
+                                </select>
+                                <i class="fas fa-spinner fa-spin loading" id="loading-rincian-objek"></i>
+                                <div class="error-message" id="error-rincian-objek"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mt-3">
+                            <div class="dropdown-item">
+                                <label class="dropdown-label">6. Sub Rincian Objek <span class="required-field">*</span></label>
+                                <select class="form-select" id="sub_rincian_objek" name="sub_rincian_objek_id" {{ empty($selectedHierarchy['sub_rincian_objek']) ? 'disabled' : '' }} required>
+                                    <option value="">Pilih Sub Rincian Objek</option>
+                                    @if(!empty($selectedHierarchy['sub_rincian_objek']))
+                                        @foreach ($subRincianObjeks as $subRincianObjek)
+                                            <option value="{{ $subRincianObjek->id }}" data-kode="{{ $subRincianObjek->kode }}" {{ (old('sub_rincian_objek_id', $selectedHierarchy['sub_rincian_objek']->id ?? '') == $subRincianObjek->id) ? 'selected' : '' }}>
+                                                {{ $subRincianObjek->kode }} - {{ $subRincianObjek->nama }}
+                                            </option>
+                                        @endforeach
+                                    @endif
+                                </select>
+                                <i class="fas fa-spinner fa-spin loading" id="loading-sub-rincian-objek"></i>
+                                <div class="error-message" id="error-sub-rincian-objek"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mt-3">
+                            <div class="dropdown-item">
+                                <label class="dropdown-label">7. Sub Sub Rincian Objek <span class="required-field">*</span></label>
+                                <select class="form-select" id="sub_sub_rincian_objek" name="sub_sub_rincian_objek_id" {{ empty($selectedHierarchy['sub_sub_rincian_objek']) ? 'disabled' : '' }} required>
+                                    <option value="">Pilih Sub Sub Rincian Objek</option>
+                                    @if(!empty($selectedHierarchy['sub_sub_rincian_objek']))
+                                        @foreach ($subSubRincianObjeks as $subSubRincianObjek)
+                                            <option value="{{ $subSubRincianObjek->id }}" data-kode="{{ $subSubRincianObjek->kode }}" {{ (old('sub_sub_rincian_objek_id', $selectedHierarchy['sub_sub_rincian_objek']->id ?? '') == $subSubRincianObjek->id) ? 'selected' : '' }}>
+                                                {{ $subSubRincianObjek->kode }} - {{ $subSubRincianObjek->nama_barang }}
+                                            </option>
+                                        @endforeach
+                                    @endif
+                                </select>
+                                <i class="fas fa-spinner fa-spin loading" id="loading-sub-sub-rincian-objek"></i>
+                                <div class="error-message" id="error-sub-sub-rincian-objek"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Display Hierarki yang dipilih -->
+                <div class="hierarchy-display fade-in" id="hierarchy-display" style="display: {{ !empty($selectedHierarchy) ? 'block' : 'none' }};">
+                    <h6><i class="fas fa-list"></i> Hierarki Yang Dipilih:</h6>
+                    <div id="hierarchy-content">
+                        @if(!empty($selectedHierarchy))
+                            @foreach ($selectedHierarchy as $key => $item)
+                                @if($item)
+                                    <div class="hierarchy-item"><span class="hierarchy-level">{{ ucfirst(str_replace('_', ' ', $key)) }}:</span> {{ $item->nama ?? $item->nama_barang }}</div>
+                                @endif
+                            @endforeach
+                        @endif
+                    </div>
+                </div>
+
+                <!-- Kode Barang Preview -->
+                <div class="kode-preview fade-in" id="kode-preview" style="display: {{ old('kode_barang', $aset->kode_barang) ? 'block' : 'none' }};">
+                    <i class="fas fa-barcode"></i> Kode Barang: <span id="kode-barang-text">{{ old('kode_barang', $aset->kode_barang) }}</span>
+                    <input type="hidden" name="kode_barang" id="kode_barang" value="{{ old('kode_barang', $aset->kode_barang) }}">
+                </div>
+
+                <!-- Informasi Dasar Aset -->
+                <div class="section-card">
+                    <h4 class="section-title">
+                        <i class="fas fa-info-circle"></i> Informasi Dasar Aset
+                    </h4>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Nama Bidang Barang <span class="required-field">*</span></label>
+                                <input type="text" class="form-control" name="nama_bidang_barang" value="{{ old('nama_bidang_barang', $aset->nama_bidang_barang) }}" required placeholder="Masukkan nama bidang barang">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Register <span class="required-field">*</span></label>
+                                <input type="text" class="form-control" name="register" value="{{ old('register', $aset->register) }}" required placeholder="Masukkan nomor register">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Nama Jenis Barang <span class="required-field">*</span></label>
+                                <input type="text" class="form-control" name="nama_jenis_barang" value="{{ old('nama_jenis_barang', $aset->nama_jenis_barang) }}" required placeholder="Masukkan nama jenis barang">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Asal Perolehan <span class="required-field">*</span></label>
+                                <input type="text" class="form-control" name="asal_perolehan" value="{{ old('asal_perolehan', $aset->asal_perolehan) }}" required placeholder="Masukkan asal perolehan">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Tahun Perolehan <span class="required-field">*</span></label>
+                                <input type="number" class="form-control" name="tahun_perolehan" min="1900" max="{{ date('Y') }}" value="{{ old('tahun_perolehan', $aset->tahun_perolehan) }}" required placeholder="Masukkan tahun perolehan">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Satuan <span class="required-field">*</span></label>
+                                <input type="text" class="form-control" name="satuan" value="{{ old('satuan', $aset->satuan) }}" required placeholder="Contoh: Unit, Buah, Set">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Keadaan Barang <span class="required-field">*</span></label>
+                                <select class="form-select" name="keadaan_barang" required>
+                                    <option value="">Pilih Keadaan Barang</option>
+                                    <option value="Baik" {{ old('keadaan_barang', $aset->keadaan_barang) == 'Baik' ? 'selected' : '' }}>Baik</option>
+                                    <option value="Kurang Baik" {{ old('keadaan_barang', $aset->keadaan_barang) == 'Kurang Baik' ? 'selected' : '' }}>Kurang Baik</option>
+                                    <option value="Rusak Berat" {{ old('keadaan_barang', $aset->keadaan_barang) == 'Rusak Berat' ? 'selected' : '' }}>Rusak Berat</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Jumlah Barang <span class="required-field">*</span></label>
+                                <input type="number" class="form-control" name="jumlah_barang" min="1" value="{{ old('jumlah_barang', $aset->jumlah_barang) }}" required placeholder="Masukkan jumlah barang">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Harga Satuan <span class="required-field">*</span></label>
+                                <input type="number" class="form-control" name="harga_satuan" min="0" step="0.01" value="{{ old('harga_satuan', $aset->harga_satuan) }}" required placeholder="Masukkan harga satuan">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Informasi Tambahan -->
+                <div class="section-card">
+                    <h4 class="section-title">
+                        <i class="fas fa-plus-circle"></i> Informasi Tambahan
+                    </h4>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Merk / Type</label>
+                                <input type="text" class="form-control" name="merk_type" value="{{ old('merk_type', $aset->merk_type) }}" placeholder="Masukkan merk atau type barang">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">No. Sertifikat</label>
+                                <input type="text" class="form-control" name="no_sertifikat" value="{{ old('no_sertifikat', $aset->no_sertifikat) }}" placeholder="Masukkan nomor sertifikat">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">No. Plat Kendaraan</label>
+                                <input type="text" class="form-control" name="no_plat_kendaraan" value="{{ old('no_plat_kendaraan', $aset->no_plat_kendaraan) }}" placeholder="Masukkan nomor plat kendaraan">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">No. Pabrik</label>
+                                <input type="text" class="form-control" name="no_pabrik" value="{{ old('no_pabrik', $aset->no_pabrik) }}" placeholder="Masukkan nomor pabrik">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">No. Casis</label>
+                                <input type="text" class="form-control" name="no_casis" value="{{ old('no_casis', $aset->no_casis) }}" placeholder="Masukkan nomor casis">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Bahan</label>
+                                <input type="text" class="form-control" name="bahan" value="{{ old('bahan', $aset->bahan) }}" placeholder="Masukkan bahan barang">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Ukuran Barang / Konstruksi</label>
+                                <input type="text" class="form-control" name="ukuran_barang_konstruksi" value="{{ old('ukuran_barang_konstruksi', $aset->ukuran_barang_konstruksi) }}" placeholder="Masukkan ukuran barang atau konstruksi">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Bukti Barang</label>
+                                <input type="file" class="form-control" name="bukti_barang" accept="image/jpeg,image/png,image/jpg,image/gif">
+                                <small class="text-muted">Format: JPG, PNG, GIF. Maksimal 2MB</small>
+                                @if($aset->bukti_barang_path)
+                                    <div class="mt-2">
+                                        <small class="text-muted">File saat ini: <a href="{{ Storage::url($aset->bukti_barang_path) }}" target="_blank">Lihat File</a></small>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Bukti Berita</label>
+                                <input type="file" class="form-control" name="bukti_berita" accept="application/pdf">
+                                <small class="text-muted">Format: PDF. Maksimal 10MB</small>
+                                @if($aset->bukti_berita_path)
+                                    <div class="mt-2">
+                                        <small class="text-muted">File saat ini: <a href="{{ Storage::url($aset->bukti_berita_path) }}" target="_blank">Lihat File</a></small>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="text-center mt-4">
+                    <button type="button" class="btn btn-secondary me-3" onclick="goBack()">
+                        <i class="fas fa-arrow-left"></i> Kembali
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Update Aset
+                    </button>
+                </div>
+            </form>
         </div>
-        <a href="{{ route('asets.index') }}" 
-           class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition duration-200">
-            <i class="fas fa-arrow-left mr-2"></i>Kembali
-        </a>
     </div>
 
-    <!-- Alert Messages -->
-<div class="mb-6">
-    @if(session('success'))
-        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-            {{ session('success') }}
-        </div>
-    @endif
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.7.32/sweetalert2.all.min.js"></script>
 
-    @if(session('error'))
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-            {{ session('error') }}
-        </div>
-    @endif
+    <script>
+        // Variabel global untuk menyimpan hierarki yang dipilih
+        let selectedHierarchy = {
+            akun: @json(old('akun_id') ? null : ($selectedHierarchy['akun'] ?? null)),
+            kelompok: @json(old('kelompok_id') ? null : ($selectedHierarchy['kelompok'] ?? null)),
+            jenis: @json(old('jenis_id') ? null : ($selectedHierarchy['jenis'] ?? null)),
+            objek: @json(old('objek_id') ? null : ($selectedHierarchy['objek'] ?? null)),
+            rincianObjek: @json(old('rincian_objek_id') ? null : ($selectedHierarchy['rincian_objek'] ?? null)),
+            subRincianObjek: @json(old('sub_rincian_objek_id') ? null : ($selectedHierarchy['sub_rincian_objek'] ?? null)),
+            subSubRincianObjek: @json(old('sub_sub_rincian_objek_id') ? null : ($selectedHierarchy['sub_sub_rincian_objek'] ?? null))
+        };
 
-    @if($errors->any())
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-            <ul class="list-disc list-inside">
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
+        document.addEventListener('DOMContentLoaded', function () {
+            setupEventListeners();
+            updateKodeBarang(); // Update kode barang awal jika semua sudah dipilih
+
+            // Show validation errors if any
+            @if($errors->any())
+                let errorMessages = '';
+                @foreach ($errors->all() as $error)
+                    errorMessages += '{{ $error }}\n';
                 @endforeach
-            </ul>
-        </div>
-    @endif
-</div>
-
-    <!-- Form -->
-    <form action="{{ route('asets.update', $aset->id) }}" method="POST" enctype="multipart/form-data" class="space-y-8">
-        @csrf
-        @method('PUT')
-        
-        <!-- Hierarchy Section -->
-        <div class="bg-white rounded-xl shadow-md p-6">
-            <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                <i class="fas fa-sitemap text-blue-600 mr-3"></i>
-                Hierarki Klasifikasi
-            </h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Akun -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">
-                        Akun <span class="text-red-500">*</span>
-                    </label>
-                    <select name="akun_id" id="akun_id" 
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('akun_id') border-red-500 @enderror">
-                        <option value="">Pilih Akun</option>
-                        @foreach($akuns as $akun)
-                            <option value="{{ $akun->id }}" {{ $hierarchy['akun']->id == $akun->id ? 'selected' : '' }}>
-                                {{ $akun->kode }} - {{ $akun->nama }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('akun_id')
-                        <p class="text-red-500 text-sm">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Kelompok -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">
-                        Kelompok <span class="text-red-500">*</span>
-                    </label>
-                    <select name="kelompok_id" id="kelompok_id" 
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('kelompok_id') border-red-500 @enderror">
-                        <option value="">Pilih Kelompok</option>
-                        @foreach($kelompoks as $kelompok)
-                            <option value="{{ $kelompok->id }}" {{ $hierarchy['kelompok']->id == $kelompok->id ? 'selected' : '' }}>
-                                {{ $kelompok->kode }} - {{ $kelompok->nama }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('kelompok_id')
-                        <p class="text-red-500 text-sm">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Jenis -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">
-                        Jenis <span class="text-red-500">*</span>
-                    </label>
-                    <select name="jenis_id" id="jenis_id" 
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('jenis_id') border-red-500 @enderror">
-                        <option value="">Pilih Jenis</option>
-                        @foreach($jenis as $j)
-                            <option value="{{ $j->id }}" {{ $hierarchy['jenis']->id == $j->id ? 'selected' : '' }}>
-                                {{ $j->kode }} - {{ $j->nama }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('jenis_id')
-                        <p class="text-red-500 text-sm">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Objek -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">
-                        Objek <span class="text-red-500">*</span>
-                    </label>
-                    <select name="objek_id" id="objek_id" 
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('objek_id') border-red-500 @enderror">
-                        <option value="">Pilih Objek</option>
-                        @foreach($objeks as $objek)
-                            <option value="{{ $objek->id }}" {{ $hierarchy['objek']->id == $objek->id ? 'selected' : '' }}>
-                                {{ $objek->kode }} - {{ $objek->nama }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('objek_id')
-                        <p class="text-red-500 text-sm">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Rincian Objek -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">
-                        Rincian Objek <span class="text-red-500">*</span>
-                    </label>
-                    <select name="rincian_objek_id" id="rincian_objek_id" 
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('rincian_objek_id') border-red-500 @enderror">
-                        <option value="">Pilih Rincian Objek</option>
-                        @foreach($rincianObjeks as $rincianObjek)
-                            <option value="{{ $rincianObjek->id }}" {{ $hierarchy['rincianObjek']->id == $rincianObjek->id ? 'selected' : '' }}>
-                                {{ $rincianObjek->kode }} - {{ $rincianObjek->nama }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('rincian_objek_id')
-                        <p class="text-red-500 text-sm">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Sub Rincian Objek -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">
-                        Sub Rincian Objek <span class="text-red-500">*</span>
-                    </label>
-                    <select name="sub_rincian_objek_id" id="sub_rincian_objek_id" 
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('sub_rincian_objek_id') border-red-500 @enderror">
-                        <option value="">Pilih Sub Rincian Objek</option>
-                        @foreach($subRincianObjeks as $subRincianObjek)
-                            <option value="{{ $subRincianObjek->id }}" {{ $hierarchy['subRincianObjek']->id == $subRincianObjek->id ? 'selected' : '' }}>
-                                {{ $subRincianObjek->kode }} - {{ $subRincianObjek->nama }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('sub_rincian_objek_id')
-                        <p class="text-red-500 text-sm">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Sub Sub Rincian Objek -->
-                <div class="space-y-2 md:col-span-2 lg:col-span-1">
-                    <label class="block text-sm font-medium text-gray-700">
-                        Sub Sub Rincian Objek <span class="text-red-500">*</span>
-                    </label>
-                    <select name="sub_sub_rincian_objek_id" id="sub_sub_rincian_objek_id" 
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('sub_sub_rincian_objek_id') border-red-500 @enderror">
-                        <option value="">Pilih Sub Sub Rincian Objek</option>
-                        @foreach($subSubRincianObjeks as $subSubRincianObjek)
-                            <option value="{{ $subSubRincianObjek->id }}" {{ $hierarchy['subSubRincianObjek']->id == $subSubRincianObjek->id ? 'selected' : '' }}>
-                                {{ $subSubRincianObjek->kode }} - {{ $subSubRincianObjek->nama_barang }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('sub_sub_rincian_objek_id')
-                        <p class="text-red-500 text-sm">{{ $message }}</p>
-                    @enderror
-                </div>
-            </div>
-        </div>
-
-        <!-- Asset Information Section -->
-        <div class="bg-white rounded-xl shadow-md p-6">
-            <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                <i class="fas fa-box text-green-600 mr-3"></i>
-                Informasi Aset
-            </h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Register -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">
-                        Register <span class="text-red-500">*</span>
-                    </label>
-                    <input type="text" name="register" id="register" 
-                           value="{{ old('register', $aset->register) }}"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('register') border-red-500 @enderror">
-                    @error('register')
-                        <p class="text-red-500 text-sm">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Kode Barang -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">
-                        Kode Barang <span class="text-red-500">*</span>
-                    </label>
-                    <input type="text" name="kode_barang" id="kode_barang" 
-                           value="{{ old('kode_barang', $aset->kode_barang) }}"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-100 @error('kode_barang') border-red-500 @enderror" readonly>
-                    @error('kode_barang')
-                        <p class="text-red-500 text-sm">{{ $message }}</p>
-                    @enderror
-                    <p class="text-xs text-gray-500">Kode barang akan di-generate otomatis</p>
-                </div>
-
-                <!-- Nama Bidang Barang -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">
-                        Nama Bidang Barang <span class="text-red-500">*</span>
-                    </label>
-                    <input type="text" name="nama_bidang_barang" 
-                           value="{{ old('nama_bidang_barang', $aset->nama_bidang_barang) }}"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('nama_bidang_barang') border-red-500 @enderror">
-                    @error('nama_bidang_barang')
-                        <p class="text-red-500 text-sm">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Nama Jenis Barang -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">
-                        Nama Jenis Barang <span class="text-red-500">*</span>
-                    </label>
-                    <input type="text" name="nama_jenis_barang" 
-                           value="{{ old('nama_jenis_barang', $aset->nama_jenis_barang) }}"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('nama_jenis_barang') border-red-500 @enderror">
-                    @error('nama_jenis_barang')
-                        <p class="text-red-500 text-sm">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Merk/Type -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">
-                        Merk/Type
-                    </label>
-                    <input type="text" name="merk_type" 
-                           value="{{ old('merk_type', $aset->merk_type) }}"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                </div>
-
-                <!-- Asal Perolehan -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">
-                        Asal Perolehan <span class="text-red-500">*</span>
-                    </label>
-                    <input type="text" name="asal_perolehan" 
-                           value="{{ old('asal_perolehan', $aset->asal_perolehan) }}"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('asal_perolehan') border-red-500 @enderror">
-                    @error('asal_perolehan')
-                        <p class="text-red-500 text-sm">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Tahun Perolehan -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">
-                        Tahun Perolehan <span class="text-red-500">*</span>
-                    </label>
-                    <input type="number" name="tahun_perolehan" 
-                           value="{{ old('tahun_perolehan', $aset->tahun_perolehan) }}"
-                           min="1900" max="{{ date('Y') }}"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('tahun_perolehan') border-red-500 @enderror">
-                    @error('tahun_perolehan')
-                        <p class="text-red-500 text-sm">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Satuan -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">
-                        Satuan <span class="text-red-500">*</span>
-                    </label>
-                    <input type="text" name="satuan" 
-                           value="{{ old('satuan', $aset->satuan) }}"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('satuan') border-red-500 @enderror">
-                    @error('satuan')
-                        <p class="text-red-500 text-sm">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Keadaan Barang -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">
-                        Keadaan Barang <span class="text-red-500">*</span>
-                    </label>
-                    <select name="keadaan_barang" 
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('keadaan_barang') border-red-500 @enderror">
-                        <option value="">Pilih Keadaan</option>
-                        <option value="Baik" {{ old('keadaan_barang', $aset->keadaan_barang) == 'Baik' ? 'selected' : '' }}>Baik</option>
-                        <option value="Kurang Baik" {{ old('keadaan_barang', $aset->keadaan_barang) == 'Kurang Baik' ? 'selected' : '' }}>Kurang Baik</option>
-                        <option value="Rusak Berat" {{ old('keadaan_barang', $aset->keadaan_barang) == 'Rusak Berat' ? 'selected' : '' }}>Rusak Berat</option>
-                    </select>
-                    @error('keadaan_barang')
-                        <p class="text-red-500 text-sm">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div class="space-y-2">
-    <label class="block text-sm font-medium text-gray-700">
-        Jumlah Barang <span class="text-red-500">*</span>
-    </label>
-    <input type="number" name="jumlah_barang" 
-           value="{{ old('jumlah_barang', $aset->jumlah_barang) }}"
-           min="1" max="100"
-           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('jumlah_barang') border-red-500 @enderror">
-    <p class="text-xs text-gray-500">Jumlah barang untuk aset ini (maksimal 100)</p>
-    @error('jumlah_barang')
-        <p class="text-red-500 text-sm">{{ $message }}</p>
-    @enderror
-</div>
-
-                <!-- Harga Satuan -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">
-                        Harga Satuan <span class="text-red-500">*</span>
-                    </label>
-                    <input type="number" name="harga_satuan" 
-                           value="{{ old('harga_satuan', $aset->harga_satuan) }}"
-                           min="0" step="0.01"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('harga_satuan') border-red-500 @enderror">
-                    @error('harga_satuan')
-                        <p class="text-red-500 text-sm">{{ $message }}</p>
-                    @enderror
-                </div>
-            </div>
-        </div>
-
-        <!-- Additional Details Section -->
-        <div class="bg-white rounded-xl shadow-md p-6">
-            <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                <i class="fas fa-info-circle text-purple-600 mr-3"></i>
-                Detail Tambahan
-            </h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- No Sertifikat -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">No Sertifikat</label>
-                    <input type="text" name="no_sertifikat" 
-                           value="{{ old('no_sertifikat', $aset->no_sertifikat) }}"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                </div>
-
-                <!-- No Plat Kendaraan -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">No Plat Kendaraan</label>
-                    <input type="text" name="no_plat_kendaraan" 
-                           value="{{ old('no_plat_kendaraan', $aset->no_plat_kendaraan) }}"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                </div>
-
-                <!-- No Pabrik -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">No Pabrik</label>
-                    <input type="text" name="no_pabrik" 
-                           value="{{ old('no_pabrik', $aset->no_pabrik) }}"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                </div>
-
-                <!-- No Casis -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">No Casis</label>
-                    <input type="text" name="no_casis" 
-                           value="{{ old('no_casis', $aset->no_casis) }}"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                </div>
-
-                <!-- Bahan -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Bahan</label>
-                    <input type="text" name="bahan" 
-                           value="{{ old('bahan', $aset->bahan) }}"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                </div>
-
-                <!-- Ukuran Barang/Konstruksi -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Ukuran Barang/Konstruksi</label>
-                    <input type="text" name="ukuran_barang_konstruksi" 
-                           value="{{ old('ukuran_barang_konstruksi', $aset->ukuran_barang_konstruksi) }}"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                </div>
-            </div>
-        </div>
-
-        <!-- File Uploads Section -->
-        <div class="bg-white rounded-xl shadow-md p-6">
-            <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                <i class="fas fa-file-upload text-orange-600 mr-3"></i>
-                Dokumen Pendukung
-            </h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Bukti Barang -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Bukti Barang (Gambar)</label>
-                    @if($aset->bukti_barang)
-                        <div class="mb-2">
-                            <p class="text-sm text-gray-600 mb-2">File saat ini: {{ $aset->bukti_barang }}</p>
-                            <img src="{{ Storage::url('bukti_barang/' . $aset->bukti_barang) }}" 
-                                 alt="Bukti Barang" class="w-32 h-32 object-cover rounded-lg border">
-                        </div>
-                    @endif
-                    <input type="file" name="bukti_barang" 
-                           accept="image/jpeg,image/png,image/jpg,image/gif"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('bukti_barang') border-red-500 @enderror">
-                    @error('bukti_barang')
-                        <p class="text-red-500 text-sm">{{ $message }}</p>
-                    @enderror
-                    <p class="text-xs text-gray-500">Format: JPEG, PNG, JPG, GIF. Maksimal 2MB</p>
-                </div>
-
-                <!-- Bukti Berita -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Bukti Berita (PDF)</label>
-                    @if($aset->bukti_berita)
-                        <div class="mb-2">
-                            <p class="text-sm text-gray-600 mb-2">File saat ini: {{ $aset->bukti_berita }}</p>
-                            <a href="{{ Storage::url('bukti_berita/' . $aset->bukti_berita) }}" 
-                               target="_blank" 
-                               class="inline-flex items-center text-blue-600 hover:text-blue-800">
-                                <i class="fas fa-file-pdf mr-2"></i>Lihat PDF
-                            </a>
-                        </div>
-                    @endif
-                    <input type="file" name="bukti_berita" 
-                           accept="application/pdf"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('bukti_berita') border-red-500 @enderror">
-                    @error('bukti_berita')
-                        <p class="text-red-500 text-sm">{{ $message }}</p>
-                    @enderror
-                    <p class="text-xs text-gray-500">Format: PDF. Maksimal 10MB</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Submit Buttons -->
-        <div class="flex items-center justify-end space-x-4">
-            <button type="button" onclick="window.history.back()" 
-                    class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition duration-200">
-                Batal
-            </button>
-            <button type="submit" 
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg transition duration-200 flex items-center">
-                <i class="fas fa-save mr-2"></i>Simpan Perubahan
-            </button>
-        </div>
-    </form>
-</div>
-
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Edit page JavaScript loaded');
-    
-    // Get all dropdown elements
-    const akunSelect = document.getElementById('akun_id');
-    const kelompokSelect = document.getElementById('kelompok_id');
-    const jenisSelect = document.getElementById('jenis_id');
-    const objekSelect = document.getElementById('objek_id');
-    const rincianObjekSelect = document.getElementById('rincian_objek_id');
-    const subRincianObjekSelect = document.getElementById('sub_rincian_objek_id');
-    const subSubRincianObjekSelect = document.getElementById('sub_sub_rincian_objek_id');
-    const kodeBarangInput = document.getElementById('kode_barang');
-    
-    // Check if all elements exist
-    if (!akunSelect || !kelompokSelect || !jenisSelect) {
-        console.error('Required dropdown elements not found');
-        return;
-    }
-
-    // Helper function to clear and populate dropdown
-    function clearAndPopulateDropdown(dropdown, data, textKey = 'nama') {
-        if (!dropdown) return;
-        
-        dropdown.innerHTML = '<option value="">Pilih...</option>';
-        data.forEach(item => {
-            const option = document.createElement('option');
-            option.value = item.id;
-            option.textContent = `${item.kode} - ${item[textKey]}`;
-            dropdown.appendChild(option);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Validation Error',
+                    text: errorMessages,
+                });
+            @endif
         });
-    }
 
-    // Helper function to clear dropdown
-    function clearDropdown(dropdown, placeholder = 'Pilih...') {
-        if (!dropdown) return;
-        dropdown.innerHTML = `<option value="">${placeholder}</option>`;
-    }
+        function setupEventListeners() {
+            // Event listeners untuk setiap dropdown
+            document.getElementById('akun')?.addEventListener('change', function () {
+                const akunId = this.value;
+                selectedHierarchy.akun = getSelectedOption(this);
+                if (akunId) {
+                    loadKelompoks(akunId);
+                    resetDropdowns(['kelompok', 'jenis', 'objek', 'rincian_objek', 'sub_rincian_objek', 'sub_sub_rincian_objek']);
+                } else {
+                    resetAllDropdowns();
+                }
+                updateHierarchyDisplay();
+                updateKodeBarang();
+            });
 
-    // Helper function to show loading state
-    function showLoading(dropdown) {
-        if (!dropdown) return;
-        dropdown.innerHTML = '<option value="">Loading...</option>';
-        dropdown.disabled = true;
-    }
+            document.getElementById('kelompok')?.addEventListener('change', function () {
+                const kelompokId = this.value;
+                selectedHierarchy.kelompok = getSelectedOption(this);
+                if (kelompokId) {
+                    loadJenis(kelompokId);
+                    resetDropdowns(['jenis', 'objek', 'rincian_objek', 'sub_rincian_objek', 'sub_sub_rincian_objek']);
+                } else {
+                    resetDropdowns(['jenis', 'objek', 'rincian_objek', 'sub_rincian_objek', 'sub_sub_rincian_objek']);
+                }
+                updateHierarchyDisplay();
+                updateKodeBarang();
+            });
 
-    // Helper function to enable dropdown
-    function enableDropdown(dropdown) {
-        if (!dropdown) return;
-        dropdown.disabled = false;
-    }
+            document.getElementById('jenis')?.addEventListener('change', function () {
+                const jenisId = this.value;
+                selectedHierarchy.jenis = getSelectedOption(this);
+                if (jenisId) {
+                    loadObjeks(jenisId);
+                    resetDropdowns(['objek', 'rincian_objek', 'sub_rincian_objek', 'sub_sub_rincian_objek']);
+                } else {
+                    resetDropdowns(['objek', 'rincian_objek', 'sub_rincian_objek', 'sub_sub_rincian_objek']);
+                }
+                updateHierarchyDisplay();
+                updateKodeBarang();
+            });
 
-    // Helper function to handle fetch errors
-    function handleFetchError(error, dropdown, dropdownName) {
-        console.error(`Error fetching ${dropdownName}:`, error);
-        enableDropdown(dropdown);
-        clearDropdown(dropdown, `Error loading ${dropdownName}`);
-    }
+            document.getElementById('objek')?.addEventListener('change', function () {
+                const objekId = this.value;
+                selectedHierarchy.objek = getSelectedOption(this);
+                if (objekId) {
+                    loadRincianObjeks(objekId);
+                    resetDropdowns(['rincian_objek', 'sub_rincian_objek', 'sub_sub_rincian_objek']);
+                } else {
+                    resetDropdowns(['rincian_objek', 'sub_rincian_objek', 'sub_sub_rincian_objek']);
+                }
+                updateHierarchyDisplay();
+                updateKodeBarang();
+            });
 
-    // Akun change handler
-    akunSelect.addEventListener('change', function() {
-        const akunId = this.value;
-        console.log('Akun changed:', akunId);
-        
-        // Clear dependent dropdowns
-        clearDropdown(kelompokSelect, 'Pilih Kelompok');
-        clearDropdown(jenisSelect, 'Pilih Jenis');
-        clearDropdown(objekSelect, 'Pilih Objek');
-        clearDropdown(rincianObjekSelect, 'Pilih Rincian Objek');
-        clearDropdown(subRincianObjekSelect, 'Pilih Sub Rincian Objek');
-        clearDropdown(subSubRincianObjekSelect, 'Pilih Sub Sub Rincian Objek');
-        if (kodeBarangInput) kodeBarangInput.value = '';
-        
-        if (akunId) {
-            showLoading(kelompokSelect);
-            
-            fetch(`/asets/kelompoks/${akunId}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+            document.getElementById('rincian_objek')?.addEventListener('change', function () {
+                const rincianObjekId = this.value;
+                selectedHierarchy.rincianObjek = getSelectedOption(this);
+                if (rincianObjekId) {
+                    loadSubRincianObjeks(rincianObjekId);
+                    resetDropdowns(['sub_rincian_objek', 'sub_sub_rincian_objek']);
+                } else {
+                    resetDropdowns(['sub_rincian_objek', 'sub_sub_rincian_objek']);
+                }
+                updateHierarchyDisplay();
+                updateKodeBarang();
+            });
+
+            document.getElementById('sub_rincian_objek')?.addEventListener('change', function () {
+                const subRincianObjekId = this.value;
+                selectedHierarchy.subRincianObjek = getSelectedOption(this);
+                // Auto-fill Nama Bidang Barang
+                if (selectedHierarchy.subRincianObjek && selectedHierarchy.subRincianObjek.nama) {
+                    const namaBidangBarangInput = document.querySelector('input[name="nama_bidang_barang"]');
+                    if (namaBidangBarangInput) {
+                        namaBidangBarangInput.value = selectedHierarchy.subRincianObjek.nama;
                     }
-                    return response.json();
-                })
-                .then(data => {
-                    enableDropdown(kelompokSelect);
-                    if (data.success) {
-                        clearAndPopulateDropdown(kelompokSelect, data.data);
-                    } else {
-                        console.error('API Error:', data.message);
-                        clearDropdown(kelompokSelect, 'Error loading data');
+                } else {
+                    // Clear field jika tidak ada pilihan
+                    const namaBidangBarangInput = document.querySelector('input[name="nama_bidang_barang"]');
+                    if (namaBidangBarangInput) {
+                        namaBidangBarangInput.value = '';
                     }
-                })
-                .catch(error => handleFetchError(error, kelompokSelect, 'kelompok'));
+                }
+                if (subRincianObjekId) {
+                    loadSubSubRincianObjeks(subRincianObjekId);
+                    resetDropdowns(['sub_sub_rincian_objek']);
+                } else {
+                    resetDropdowns(['sub_sub_rincian_objek']);
+                }
+                updateHierarchyDisplay();
+                updateKodeBarang();
+            });
+
+            document.getElementById('sub_sub_rincian_objek')?.addEventListener('change', function () {
+                selectedHierarchy.subSubRincianObjek = getSelectedOption(this);
+                updateHierarchyDisplay();
+                updateKodeBarang();
+            });
+
+            // Form submission handler
+            document.getElementById('assetForm')?.addEventListener('submit', function (e) {
+                const isValid = validateDropdowns();
+                if (!isValid) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: 'Harap lengkapi semua level hierarki aset yang wajib diisi!',
+                    });
+                    return;
+                }
+                // Show loading
+                Swal.fire({
+                    title: 'Memperbarui...',
+                    text: 'Sedang memproses data aset',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+            });
         }
-    });
 
-    // Kelompok change handler
-    kelompokSelect.addEventListener('change', function() {
-        const kelompokId = this.value;
-        console.log('Kelompok changed:', kelompokId);
-        
-        // Clear dependent dropdowns
-        clearDropdown(jenisSelect, 'Pilih Jenis');
-        clearDropdown(objekSelect, 'Pilih Objek');
-        clearDropdown(rincianObjekSelect, 'Pilih Rincian Objek');
-        clearDropdown(subRincianObjekSelect, 'Pilih Sub Rincian Objek');
-        clearDropdown(subSubRincianObjekSelect, 'Pilih Sub Sub Rincian Objek');
-        if (kodeBarangInput) kodeBarangInput.value = '';
-        
-        if (kelompokId) {
-            showLoading(jenisSelect);
-            
-            fetch(`/asets/jenis/${kelompokId}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    enableDropdown(jenisSelect);
-                    if (data.success) {
-                        clearAndPopulateDropdown(jenisSelect, data.data);
-                    } else {
-                        console.error('API Error:', data.message);
-                        clearDropdown(jenisSelect, 'Error loading data');
-                    }
-                })
-                .catch(error => handleFetchError(error, jenisSelect, 'jenis'));
+
+        function getSelectedOption(selectElement) {
+            if (!selectElement) return null;
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
+            if (selectedOption && selectedOption.value) {
+                // Ambil kode dari data-kode attribute yang sudah diset saat populate
+                const kode = selectedOption.dataset.kode || '';
+                // Ambil nama dari text content (hilangkan bagian kode di depan)
+                let nama = selectedOption.textContent;
+                if (nama.includes(' - ')) {
+                    nama = nama.split(' - ').slice(1).join(' - '); // Ambil setelah " - "
+                }
+                return {
+                    id: selectedOption.value,
+                    nama: nama,
+                    kode: kode
+                };
+            }
+            return null;
         }
-    });
 
-    // Jenis change handler
-    jenisSelect.addEventListener('change', function() {
-        const jenisId = this.value;
-        console.log('Jenis changed:', jenisId);
-        
-        // Clear dependent dropdowns
-        clearDropdown(objekSelect, 'Pilih Objek');
-        clearDropdown(rincianObjekSelect, 'Pilih Rincian Objek');
-        clearDropdown(subRincianObjekSelect, 'Pilih Sub Rincian Objek');
-        clearDropdown(subSubRincianObjekSelect, 'Pilih Sub Sub Rincian Objek');
-        if (kodeBarangInput) kodeBarangInput.value = '';
-        
-        if (jenisId) {
-            showLoading(objekSelect);
-            
-            fetch(`/asets/objeks/${jenisId}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    enableDropdown(objekSelect);
-                    if (data.success) {
-                        clearAndPopulateDropdown(objekSelect, data.data);
-                    } else {
-                        console.error('API Error:', data.message);
-                        clearDropdown(objekSelect, 'Error loading data');
-                    }
-                })
-                .catch(error => handleFetchError(error, objekSelect, 'objek'));
+        // Fungsi untuk memuat data dan mengisi dropdown berdasarkan data yang ada
+        function populateSelect(select, data, placeholder, nameField = 'nama') {
+            if (!select) return;
+            select.innerHTML = `<option value="">${placeholder}</option>`;
+            data.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.id;
+                option.textContent = `${item.kode} - ${item[nameField]}`;
+                option.dataset.kode = item.kode;
+                select.appendChild(option);
+            });
         }
-    });
 
-    // Objek change handler
-    objekSelect.addEventListener('change', function() {
-        const objekId = this.value;
-        console.log('Objek changed:', objekId);
-        
-        // Clear dependent dropdowns
-        clearDropdown(rincianObjekSelect, 'Pilih Rincian Objek');
-        clearDropdown(subRincianObjekSelect, 'Pilih Sub Rincian Objek');
-        clearDropdown(subSubRincianObjekSelect, 'Pilih Sub Sub Rincian Objek');
-        if (kodeBarangInput) kodeBarangInput.value = '';
-        
-        if (objekId) {
-            showLoading(rincianObjekSelect);
-            
-            fetch(`/asets/rincian-objeks/${objekId}`)
+        // Fungsi-fungsi untuk memuat data dari server (seperti di create.blade.php)
+        // Anda perlu menyesuaikan URL dan struktur data sesuai dengan API Anda
+        function loadKelompoks(akunId) {
+            const select = document.getElementById('kelompok');
+            if (!select) return;
+            showLoading('kelompok');
+            fetch(`/api/asets/kelompoks/${akunId}`)
                 .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    enableDropdown(rincianObjekSelect);
-                    if (data.success) {
-                        clearAndPopulateDropdown(rincianObjekSelect, data.data);
-                    } else {
-                        console.error('API Error:', data.message);
-                        clearDropdown(rincianObjekSelect, 'Error loading data');
-                    }
-                })
-                .catch(error => handleFetchError(error, rincianObjekSelect, 'rincian objek'));
-        }
-    });
-
-    // Rincian Objek change handler
-    rincianObjekSelect.addEventListener('change', function() {
-        const rincianObjekId = this.value;
-        console.log('Rincian Objek changed:', rincianObjekId);
-        
-        // Clear dependent dropdowns
-        clearDropdown(subRincianObjekSelect, 'Pilih Sub Rincian Objek');
-        clearDropdown(subSubRincianObjekSelect, 'Pilih Sub Sub Rincian Objek');
-        if (kodeBarangInput) kodeBarangInput.value = '';
-        
-        if (rincianObjekId) {
-            showLoading(subRincianObjekSelect);
-            
-            fetch(`/asets/sub-rincian-objeks/${rincianObjekId}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    enableDropdown(subRincianObjekSelect);
-                    if (data.success) {
-                        clearAndPopulateDropdown(subRincianObjekSelect, data.data);
-                    } else {
-                        console.error('API Error:', data.message);
-                        clearDropdown(subRincianObjekSelect, 'Error loading data');
-                    }
-                })
-                .catch(error => handleFetchError(error, subRincianObjekSelect, 'sub rincian objek'));
-        }
-    });
-
-    // Sub Rincian Objek change handler
-    subRincianObjekSelect.addEventListener('change', function() {
-        const subRincianObjekId = this.value;
-        console.log('Sub Rincian Objek changed:', subRincianObjekId);
-        
-        // Clear dependent dropdowns
-        clearDropdown(subSubRincianObjekSelect, 'Pilih Sub Sub Rincian Objek');
-        if (kodeBarangInput) kodeBarangInput.value = '';
-        
-        if (subRincianObjekId) {
-            showLoading(subSubRincianObjekSelect);
-            
-            fetch(`/asets/sub-sub-rincian-objeks/${subRincianObjekId}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    enableDropdown(subSubRincianObjekSelect);
-                    if (data.success) {
-                        clearAndPopulateDropdown(subSubRincianObjekSelect, data.data, 'nama_barang');
-                    } else {
-                        console.error('API Error:', data.message);
-                        clearDropdown(subSubRincianObjekSelect, 'Error loading data');
-                    }
-                })
-                .catch(error => handleFetchError(error, subSubRincianObjekSelect, 'sub sub rincian objek'));
-        }
-    });
-
-    // Sub Sub Rincian Objek change handler - Generate kode barang
-    if (subSubRincianObjekSelect && kodeBarangInput) {
-        subSubRincianObjekSelect.addEventListener('change', function() {
-            const subSubRincianObjekId = this.value;
-            console.log('Sub Sub Rincian Objek changed:', subSubRincianObjekId);
-            
-            if (subSubRincianObjekId) {
-                // Show loading state for kode barang
-                kodeBarangInput.value = 'Generating...';
-                kodeBarangInput.style.background = '#f3f4f6';
-                
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                
-                fetch('/asets/generate-kode-barang-preview', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken || ''
-                    },
-                    body: JSON.stringify({
-                        sub_sub_rincian_objek_id: subSubRincianObjekId
-                    })
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                     return response.json();
                 })
                 .then(data => {
                     if (data.success) {
-                        kodeBarangInput.value = data.kode_barang;
+                        populateSelect(select, data.data, 'Pilih Kelompok');
+                        select.disabled = false;
+                        // Set selected value if it exists in old input or selected hierarchy
+                        const selectedValue = "{{ old('kelompok_id') }}" || (selectedHierarchy.kelompok ? selectedHierarchy.kelompok.id : '');
+                        if (selectedValue) {
+                             select.value = selectedValue;
+                        }
+                        hideError('kelompok');
                     } else {
-                        console.error('Error generating kode barang:', data.message);
-                        kodeBarangInput.value = '';
-                        alert('Gagal generate kode barang: ' + data.message);
+                        showError('kelompok', data.message || 'Gagal memuat data kelompok');
+                        select.disabled = true;
                     }
-                    kodeBarangInput.style.background = '#f9fafb';
                 })
                 .catch(error => {
-                    console.error('Error generating kode barang:', error);
-                    kodeBarangInput.value = '';
-                    kodeBarangInput.style.background = '#f9fafb';
-                    alert('Gagal generate kode barang. Silakan coba lagi.');
+                    console.error('Error loading kelompoks:', error);
+                    showError('kelompok', 'Terjadi kesalahan saat memuat data');
+                    select.disabled = true;
+                })
+                .finally(() => {
+                    hideLoading('kelompok');
                 });
+        }
+
+        function loadJenis(kelompokId) {
+            const select = document.getElementById('jenis');
+            if (!select) return;
+            showLoading('jenis');
+            fetch(`/api/asets/jenis/${kelompokId}`)
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        populateSelect(select, data.data, 'Pilih Jenis');
+                        select.disabled = false;
+                         const selectedValue = "{{ old('jenis_id') }}" || (selectedHierarchy.jenis ? selectedHierarchy.jenis.id : '');
+                        if (selectedValue) {
+                             select.value = selectedValue;
+                        }
+                        hideError('jenis');
+                    } else {
+                        showError('jenis', data.message || 'Gagal memuat data jenis');
+                        select.disabled = true;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading jenis:', error);
+                    showError('jenis', 'Terjadi kesalahan saat memuat data');
+                    select.disabled = true;
+                })
+                .finally(() => {
+                    hideLoading('jenis');
+                });
+        }
+
+        function loadObjeks(jenisId) {
+            const select = document.getElementById('objek');
+            if (!select) return;
+            showLoading('objek');
+            fetch(`/api/asets/objeks/${jenisId}`)
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        populateSelect(select, data.data, 'Pilih Objek');
+                        select.disabled = false;
+                         const selectedValue = "{{ old('objek_id') }}" || (selectedHierarchy.objek ? selectedHierarchy.objek.id : '');
+                        if (selectedValue) {
+                             select.value = selectedValue;
+                        }
+                        hideError('objek');
+                    } else {
+                        showError('objek', data.message || 'Gagal memuat data objek');
+                        select.disabled = true;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading objeks:', error);
+                    showError('objek', 'Terjadi kesalahan saat memuat data');
+                    select.disabled = true;
+                })
+                .finally(() => {
+                    hideLoading('objek');
+                });
+        }
+
+        function loadRincianObjeks(objekId) {
+            const select = document.getElementById('rincian_objek');
+            if (!select) return;
+            showLoading('rincian-objek');
+            fetch(`/api/asets/rincian-objeks/${objekId}`)
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        populateSelect(select, data.data, 'Pilih Rincian Objek');
+                        select.disabled = false;
+                         const selectedValue = "{{ old('rincian_objek_id') }}" || (selectedHierarchy.rincianObjek ? selectedHierarchy.rincianObjek.id : '');
+                        if (selectedValue) {
+                             select.value = selectedValue;
+                        }
+                        hideError('rincian-objek');
+                    } else {
+                        showError('rincian-objek', data.message || 'Gagal memuat data rincian objek');
+                        select.disabled = true;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading rincian objeks:', error);
+                    showError('rincian-objek', 'Terjadi kesalahan saat memuat data');
+                    select.disabled = true;
+                })
+                .finally(() => {
+                    hideLoading('rincian-objek');
+                });
+        }
+
+        function loadSubRincianObjeks(rincianObjekId) {
+            const select = document.getElementById('sub_rincian_objek');
+            if (!select) return;
+            showLoading('sub-rincian-objek');
+            fetch(`/api/asets/sub-rincian-objeks/${rincianObjekId}`)
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        populateSelect(select, data.data, 'Pilih Sub Rincian Objek');
+                        select.disabled = false;
+                         const selectedValue = "{{ old('sub_rincian_objek_id') }}" || (selectedHierarchy.subRincianObjek ? selectedHierarchy.subRincianObjek.id : '');
+                        if (selectedValue) {
+                             select.value = selectedValue;
+                        }
+                        hideError('sub-rincian-objek');
+                    } else {
+                        showError('sub-rincian-objek', data.message || 'Gagal memuat data sub rincian objek');
+                        select.disabled = true;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading sub rincian objeks:', error);
+                    showError('sub-rincian-objek', 'Terjadi kesalahan saat memuat data');
+                    select.disabled = true;
+                })
+                .finally(() => {
+                    hideLoading('sub-rincian-objek');
+                });
+        }
+
+        function loadSubSubRincianObjeks(subRincianObjekId) {
+            const select = document.getElementById('sub_sub_rincian_objek');
+            if (!select) return;
+            showLoading('sub-sub-rincian-objek');
+            fetch(`/api/asets/sub-sub-rincian-objeks/${subRincianObjekId}`)
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        populateSelect(select, data.data, 'Pilih Sub Sub Rincian Objek', 'nama_barang');
+                        select.disabled = false;
+                         const selectedValue = "{{ old('sub_sub_rincian_objek_id') }}" || (selectedHierarchy.subSubRincianObjek ? selectedHierarchy.subSubRincianObjek.id : '');
+                        if (selectedValue) {
+                             select.value = selectedValue;
+                        }
+                        hideError('sub-sub-rincian-objek');
+                    } else {
+                        showError('sub-sub-rincian-objek', data.message || 'Gagal memuat data sub sub rincian objek');
+                        select.disabled = true;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading sub sub rincian objeks:', error);
+                    showError('sub-sub-rincian-objek', 'Terjadi kesalahan saat memuat data');
+                    select.disabled = true;
+                })
+                .finally(() => {
+                    hideLoading('sub-sub-rincian-objek');
+                });
+        }
+
+        // Fungsi-fungsi helper (seperti di create.blade.php)
+        function resetDropdowns(dropdownIds) {
+            dropdownIds.forEach(id => {
+                const select = document.getElementById(id);
+                if (select) {
+                    select.innerHTML = '<option value="">Pilih...</option>';
+                    select.disabled = true;
+                    const errorId = id.replace(/_/g, '-');
+                    hideError(errorId);
+                    // Clear from selectedHierarchy
+                    const key = id.replace(/_/g, '').replace('objek', 'Objek');
+                    if (selectedHierarchy[key]) {
+                        delete selectedHierarchy[key];
+                    }
+                    // Clear Nama Bidang Barang jika sub_rincian_objek di-reset
+                    if (id === 'sub_rincian_objek') {
+                        const namaBidangBarangInput = document.querySelector('input[name="nama_bidang_barang"]');
+                        if (namaBidangBarangInput) {
+                            namaBidangBarangInput.value = '';
+                        }
+                    }
+                }
+            });
+        }
+
+        function resetAllDropdowns() {
+            resetDropdowns(['kelompok', 'jenis', 'objek', 'rincian_objek', 'sub_rincian_objek', 'sub_sub_rincian_objek']);
+            hideKodePreview();
+            selectedHierarchy = {};
+            updateHierarchyDisplay();
+        }
+
+        function showLoading(type) {
+            const loadingElement = document.getElementById(`loading-${type}`);
+            if (loadingElement) loadingElement.style.display = 'inline-block';
+        }
+
+        function hideLoading(type) {
+            const loadingElement = document.getElementById(`loading-${type}`);
+            if (loadingElement) loadingElement.style.display = 'none';
+        }
+
+        function showError(field, message) {
+            const errorElement = document.getElementById(`error-${field}`);
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+            }
+        }
+
+        function hideError(field) {
+            const errorElement = document.getElementById(`error-${field}`);
+            if (errorElement) errorElement.style.display = 'none';
+        }
+
+        function validateDropdowns() {
+            let isValid = true;
+            const dropdowns = [
+                'akun', 'kelompok', 'jenis', 'objek',
+                'rincian_objek', 'sub_rincian_objek', 'sub_sub_rincian_objek'
+            ];
+            dropdowns.forEach(dropdownId => {
+                const select = document.getElementById(dropdownId);
+                if (select && !select.value) {
+                    const fieldName = dropdownId.replace(/_/g, '-');
+                    showError(fieldName, 'Field ini wajib diisi');
+                    isValid = false;
+                }
+            });
+            return isValid;
+        }
+
+        function updateKodeBarang() {
+            // Generate kode barang automatically when all hierarchy is selected
+            if (selectedHierarchy.akun && selectedHierarchy.kelompok && selectedHierarchy.jenis &&
+                selectedHierarchy.objek && selectedHierarchy.rincianObjek &&
+                selectedHierarchy.subRincianObjek && selectedHierarchy.subSubRincianObjek) {
+                // Generate kode barang from hierarchy
+                const kodeBarang = generateKodeFromHierarchy();
+                if (kodeBarang) {
+                    document.getElementById('kode-barang-text').textContent = kodeBarang;
+                    document.getElementById('kode_barang').value = kodeBarang;
+                    document.getElementById('kode-preview').style.display = 'block';
+                }
             } else {
-                kodeBarangInput.value = '';
-            }
-        });
-    }
-
-  // File upload validation
-    const buktiBarangInput = document.querySelector('input[name="bukti_barang"]');
-    const buktiBeritaInput = document.querySelector('input[name="bukti_berita"]');
-    const form = document.querySelector('form');
-
-    if (buktiBarangInput) {
-        buktiBarangInput.addEventListener('change', function() {
-            const file = this.files[0];
-            if (file) {
-                // Check file size (2MB = 2 * 1024 * 1024 bytes)
-                if (file.size > 2 * 1024 * 1024) {
-                    alert('Ukuran file gambar maksimal 2MB');
-                    this.value = '';
-                    return;
-                }
-                
-                // Check file type
-                const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
-                if (!allowedTypes.includes(file.type)) {
-                    alert('File harus berupa gambar (JPEG, PNG, JPG, GIF)');
-                    this.value = '';
-                    return;
-                }
-                
-                console.log('Bukti barang file selected:', file.name);
-            }
-        });
-    }
-
-    if (buktiBeritaInput) {
-        buktiBeritaInput.addEventListener('change', function() {
-            const file = this.files[0];
-            if (file) {
-                // Check file size (10MB = 10 * 1024 * 1024 bytes)
-                if (file.size > 10 * 1024 * 1024) {
-                    alert('Ukuran file PDF maksimal 10MB');
-                    this.value = '';
-                    return;
-                }
-                
-                // Check file type
-                if (file.type !== 'application/pdf') {
-                    alert('File harus berupa PDF');
-                    this.value = '';
-                    return;
-                }
-                
-                console.log('Bukti berita file selected:', file.name);
-            }
-        });
-    }
-
-    // Prevent form submission if files are invalid
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            console.log('Form submission attempted');
-            
-            // Validate files before submission
-            if (buktiBarangInput && buktiBarangInput.files[0]) {
-                const file = buktiBarangInput.files[0];
-                if (file.size > 2 * 1024 * 1024 || !['image/jpeg', 'image/png', 'image/jpg', 'image/gif'].includes(file.type)) {
-                    e.preventDefault();
-                    alert('File bukti barang tidak valid. Pastikan file adalah gambar (JPEG, PNG, JPG, GIF) dan ukurannya tidak melebihi 2MB.');
-                    return;
+                // Jika tidak semua terpilih, tetap tampilkan kode lama jika ada
+                const existingKode = "{{ old('kode_barang', $aset->kode_barang) }}";
+                if(existingKode) {
+                     document.getElementById('kode-barang-text').textContent = existingKode;
+                     document.getElementById('kode_barang').value = existingKode;
+                     document.getElementById('kode-preview').style.display = 'block';
+                } else {
+                    hideKodePreview();
                 }
             }
+        }
 
-            if (buktiBeritaInput && buktiBeritaInput.files[0]) {
-                const file = buktiBeritaInput.files[0];
-                if (file.size > 10 * 1024 * 1024 || file.type !== 'application/pdf') {
-                    e.preventDefault();
-                    alert('File bukti berita tidak valid. Pastikan file adalah PDF dan ukurannya tidak melebihi 10MB.');
-                    return;
+        function generateKodeFromHierarchy() {
+            try {
+                if (!selectedHierarchy.subSubRincianObjek?.kode) {
+                    return null;
                 }
+                let kode = selectedHierarchy.subSubRincianObjek.kode;
+                return kode;
+            } catch (error) {
+                console.error('Error generating kode barang:', error);
+                return null;
             }
+        }
 
-            // Disable submit button to prevent double submission
-            const submitButton = form.querySelector('button[type="submit"]');
-            if (submitButton) {
-                submitButton.disabled = true;
-                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Menyimpan...';
-                
-                // Re-enable after 5 seconds as fallback
-                setTimeout(() => {
-                    submitButton.disabled = false;
-                    submitButton.innerHTML = '<i class="fas fa-save mr-2"></i>Simpan Perubahan';
-                }, 5000);
+        function hideKodePreview() {
+            const preview = document.getElementById('kode-preview');
+            const kodeInput = document.getElementById('kode_barang');
+            if (preview) preview.style.display = 'none';
+            if (kodeInput) kodeInput.value = '';
+        }
+
+        function updateHierarchyDisplay() {
+            const hierarchyDisplay = document.getElementById('hierarchy-display');
+            const hierarchyContent = document.getElementById('hierarchy-content');
+            if (!hierarchyDisplay || !hierarchyContent) return;
+            let content = '';
+            if (selectedHierarchy.akun) {
+                content += `<div class="hierarchy-item"><span class="hierarchy-level">Akun:</span> ${selectedHierarchy.akun.nama}</div>`;
             }
-        });
-    }
-    // Auto-focus on first error field
-    const firstError = document.querySelector('.border-red-500');
-    if (firstError) {
-        firstError.focus();
-        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+            if (selectedHierarchy.kelompok) {
+                content += `<div class="hierarchy-item"><span class="hierarchy-level">Kelompok:</span> ${selectedHierarchy.kelompok.nama}</div>`;
+            }
+            if (selectedHierarchy.jenis) {
+                content += `<div class="hierarchy-item"><span class="hierarchy-level">Jenis:</span> ${selectedHierarchy.jenis.nama}</div>`;
+            }
+            if (selectedHierarchy.objek) {
+                content += `<div class="hierarchy-item"><span class="hierarchy-level">Objek:</span> ${selectedHierarchy.objek.nama}</div>`;
+            }
+            if (selectedHierarchy.rincianObjek) {
+                content += `<div class="hierarchy-item"><span class="hierarchy-level">Rincian Objek:</span> ${selectedHierarchy.rincianObjek.nama}</div>`;
+            }
+            if (selectedHierarchy.subRincianObjek) {
+                content += `<div class="hierarchy-item"><span class="hierarchy-level">Sub Rincian Objek:</span> ${selectedHierarchy.subRincianObjek.nama}</div>`;
+            }
+            if (selectedHierarchy.subSubRincianObjek) {
+                content += `<div class="hierarchy-item"><span class="hierarchy-level">Sub Sub Rincian:</span> ${selectedHierarchy.subSubRincianObjek.nama}</div>`;
+            }
+            if (content) {
+                hierarchyContent.innerHTML = content;
+                hierarchyDisplay.style.display = 'block';
+            } else {
+                hierarchyDisplay.style.display = 'none';
+            }
+        }
 
-    console.log('Edit page JavaScript initialization complete');
-});
-</script>
-@endpush
-
-@endsection
+        function goBack() {
+            window.history.back();
+        }
+    </script>
+</body>
+</html>

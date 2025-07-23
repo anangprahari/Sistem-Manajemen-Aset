@@ -385,13 +385,15 @@ body {
         <div class="col-md-4">
             <div class="dropdown-item">
                 <label class="dropdown-label">1. Akun <span class="required-field">*</span></label>
-                <select class="form-select" id="akun" name="akun_id" required>
+               <select class="form-select" id="akun" name="akun_id" required>
                     <option value="">Pilih Akun</option>
-                    <option value="1" data-kode="01">01 - Aset Lancar</option>
-                    <option value="2" data-kode="02">02 - Investasi Jangka Panjang</option>
-                    <option value="3" data-kode="03">03 - Aset Tetap</option>
-                    <option value="4" data-kode="04">04 - Dana Cadangan</option>
+                    @foreach($akuns as $akun)
+                        <option value="{{ $akun->id }}" data-kode="{{ $akun->kode }}">
+                            {{ $akun->kode }} - {{ $akun->nama }}
+                        </option>
+                    @endforeach
                 </select>
+
                 <i class="fas fa-spinner fa-spin loading" id="loading-akun"></i>
                 <div class="error-message" id="error-akun"></div>
             </div>
