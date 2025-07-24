@@ -98,6 +98,8 @@ Route::middleware(['auth'])->group(function () {
     // =============================
     Route::resource('asets', AsetController::class);
 
+    Route::get('/asets/{id}/download-pdf', [AsetController::class, 'downloadPdf'])->name('asets.downloadPdf');
+
     // API Routes for AJAX calls - Group them for better organization
     Route::prefix('api/asets')->name('api.asets.')->group(function () {
         Route::get('/kelompoks/{akunId}', [AsetController::class, 'getKelompoks'])->name('kelompoks');

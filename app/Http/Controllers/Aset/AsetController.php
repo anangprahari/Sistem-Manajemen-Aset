@@ -12,6 +12,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Barryvdh\DomPDF\Facade\Pdf;
+use setasign\Fpdi\Tcpdf\Fpdi;
+use Illuminate\Http\Response;
 
 class AsetController extends Controller
 {
@@ -24,14 +27,25 @@ class AsetController extends Controller
             'subSubRincianObjek.subRincianObjek.rincianObjek.objek.jenis.kelompok.akun'
         ]);
 
-        // Add search functionality
+        // Mesin pencarian
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('nama_bidang_barang', 'like', "%{$search}%")
                     ->orWhere('nama_jenis_barang', 'like', "%{$search}%")
-                    ->orWhere('kode_barang', 'like', "%{$search}%");
+                    ->orWhere('kode_barang', 'like', "%{$search}%")
+                    ->orWhere('register', 'like', "%{$search}%");
             });
+        }
+
+        // Filter tahun perolehan
+        if ($request->filled('tahun_perolehan')) {
+            $query->where('tahun_perolehan', $request->tahun_perolehan);
+        }
+
+        // Filter keadaan barang
+        if ($request->filled('keadaan_barang')) {
+            $query->where('keadaan_barang', $request->keadaan_barang);
         }
 
         $asets = $query->latest()->paginate(15);
@@ -675,5 +689,120 @@ class AsetController extends Controller
             'subRincianObjek' => $subSubRincianObjek->subRincianObjek,
             'subSubRincianObjek' => $subSubRincianObjek,
         ];
+    }
+
+    /**
+     * Download PDF report for specific asset
+     */
+    public function downloadPdf(int $id)
+    {
+        try {
+            // Get asset with all related data
+            $aset = Aset::with([
+                'subSubRincianObjek.subRincianObjek.rincianObjek.objek.jenis.kelompok.akun'
+            ])->findOrFail($id);
+
+            // Generate PDF with asset information and image
+            $pdf = $this->generateAssetInfoPdf($aset);
+            $pdfContent = $pdf->output();
+
+            // If there's bukti_berita PDF, merge it
+            if ($aset->bukti_berita && Storage::disk('public')->exists('bukti_berita/' . $aset->bukti_berita)) {
+                $buktiBeritaPath = storage_path('app/public/bukti_berita/' . $aset->bukti_berita);
+                $pdfContent = $this->mergePdfFiles($pdfContent, $buktiBeritaPath);
+            }
+
+            $fileName = 'aset_' . $aset->register . '_' . date('Y-m-d_H-i-s') . '.pdf';
+
+            return response($pdfContent)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+        } catch (\Exception $e) {
+            Log::error('Error generating PDF for asset: ' . $e->getMessage(), [
+                'asset_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan saat mengunduh PDF: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Generate PDF with asset information and image
+     */
+    private function generateAssetInfoPdf(Aset $aset): \Barryvdh\DomPDF\PDF
+    {
+        // Check if bukti_barang image exists
+        $imagePath = null;
+        $imageBase64 = null;
+
+        if ($aset->bukti_barang && Storage::disk('public')->exists('bukti_barang/' . $aset->bukti_barang)) {
+            $imagePath = storage_path('app/public/bukti_barang/' . $aset->bukti_barang);
+
+            // Convert image to base64 for PDF
+            if (file_exists($imagePath)) {
+                $imageData = file_get_contents($imagePath);
+                $imageBase64 = 'data:image/' . pathinfo($imagePath, PATHINFO_EXTENSION) . ';base64,' . base64_encode($imageData);
+            }
+        }
+
+        // Extract hierarchy for display
+        $hierarchy = $this->extractHierarchy($aset);
+
+        $data = [
+            'aset' => $aset,
+            'hierarchy' => $hierarchy,
+            'imageBase64' => $imageBase64,
+            'generatedAt' => now()->format('d F Y H:i:s')
+        ];
+
+        // Generate PDF using view template
+        $pdf = Pdf::loadView('asets.pdf', $data);
+
+        // Set paper size and orientation
+        $pdf->setPaper('A4', 'portrait');
+
+        return $pdf;
+    }
+
+    /**
+     * Merge two PDF files using FPDI
+     */
+    private function mergePdfFiles(string $mainPdfContent, string $buktiBeritaPath): string
+    {
+        try {
+            $fpdi = new Fpdi();
+
+            // Add pages from main PDF (asset info)
+            $tempMainFile = tempnam(sys_get_temp_dir(), 'main_pdf_');
+            file_put_contents($tempMainFile, $mainPdfContent);
+
+            $pageCount = $fpdi->setSourceFile($tempMainFile);
+            for ($pageNum = 1; $pageNum <= $pageCount; $pageNum++) {
+                $tpl = $fpdi->importPage($pageNum);
+                $fpdi->AddPage();
+                $fpdi->useTemplate($tpl);
+            }
+
+            // Add pages from bukti_berita PDF
+            if (file_exists($buktiBeritaPath)) {
+                $pageCount = $fpdi->setSourceFile($buktiBeritaPath);
+                for ($pageNum = 1; $pageNum <= $pageCount; $pageNum++) {
+                    $tpl = $fpdi->importPage($pageNum);
+                    $fpdi->AddPage();
+                    $fpdi->useTemplate($tpl);
+                }
+            }
+
+            // Clean up temp file
+            unlink($tempMainFile);
+
+            return $fpdi->Output('', 'S'); // Return as string
+
+        } catch (\Exception $e) {
+            Log::warning('Failed to merge PDF files, returning main PDF only: ' . $e->getMessage());
+            return $mainPdfContent; // Return main PDF if merge fails
+        }
     }
 }

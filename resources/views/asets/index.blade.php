@@ -19,7 +19,7 @@
                     </div>
                     <div>
                         <h2 class="page-title mb-0">Manajemen Aset</h2>
-                        <div class="text-muted mt-1">Kelola dan pantau seluruh aset organisasi</div>
+                        <div class="text-muted mt-1">Kelola dan pantau seluruh aset Diskominfo</div>
                     </div>
                 </div>
             </div>
@@ -87,6 +87,55 @@
         </div>
     @endif
 
+<div class="card mb-4 shadow-sm">
+    <div class="card-body">
+        <form method="GET" action="{{ route('asets.index') }}">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label for="search" class="form-label fw-bold text-blue mb-1">Pencarian</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-blue-lt text-blue">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                        </span>
+                        <input type="text" name="search" id="search" class="form-control" placeholder="Cari nama barang, kode, atau register..." value="{{ request('search') }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label for="tahun_perolehan" class="form-label fw-bold text-blue mb-1">Tahun Perolehan</label>
+                    <select name="tahun_perolehan" id="tahun_perolehan" class="form-select">
+                        <option value="">Semua Tahun</option>
+                        @for($year = date('Y'); $year >= 2000; $year--)
+                            <option value="{{ $year }}" {{ request('tahun_perolehan') == $year ? 'selected' : '' }}>{{ $year }}</option>
+                        @endfor
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="keadaan_barang" class="form-label fw-bold text-blue mb-1">Keadaan Barang</label>
+                    <select name="keadaan_barang" id="keadaan_barang" class="form-select">
+                        <option value="">Semua Keadaan</option>
+                        <option value="Baik" {{ request('keadaan_barang') == 'Baik' ? 'selected' : '' }}>Baik</option>
+                        <option value="Kurang Baik" {{ request('keadaan_barang') == 'Kurang Baik' ? 'selected' : '' }}>Kurang Baik</option>
+                        <option value="Rusak Berat" {{ request('keadaan_barang') == 'Rusak Berat' ? 'selected' : '' }}>Rusak Berat</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-blue w-100 fw-bold">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        Cari / Filter
+                    </button>
+                    <a href="{{ route('asets.index') }}" class="btn btn-outline-blue w-100 fw-bold">Reset</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
     <div class="card shadow-sm">
         <div class="card-header bg-blue-lt border-0">
             <div class="d-flex align-items-center">
@@ -102,49 +151,6 @@
                 <div>
                     <h3 class="card-title mb-0 text-blue">Daftar Seluruh Aset</h3>
                     <div class="text-muted small">Total {{ $asets->total() }} item terdaftar</div>
-                </div>
-                <div class="ms-auto">
-                    <div class="dropdown">
-                        <button class="btn btn-ghost-blue btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                <circle cx="12" cy="12" r="1"></circle>
-                                <circle cx="12" cy="19" r="1"></circle>
-                                <circle cx="12" cy="5" r="1"></circle>
-                            </svg>
-                            Opsi
-                        </button>
-                        <div class="dropdown-menu dropdown-menu-end">
-                            <a class="dropdown-item" href="#">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                    <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
-                                    <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"></path>
-                                </svg>
-                                Export Excel
-                            </a>
-                            <a class="dropdown-item" href="#">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                    <rect x="3" y="4" width="18" height="4" rx="1"></rect>
-                                    <rect x="3" y="12" width="18" height="4" rx="1"></rect>
-                                    <rect x="3" y="20" width="18" height="4" rx="1"></rect>
-                                </svg>
-                                Export PDF
-                            </a>
-                            <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" href="#">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                    <polyline points="6,9 6,2 18,2 18,9"></polyline>
-                                    <path d="M6 18h12a2 2 0 0 0 2 -2v-5a2 2 0 0 0 -2 -2h-12a2 2 0 0 0 -2 2v5a2 2 0 0 0 2 2"></path>
-                                    <line x1="6" y1="14" x2="9.25" y2="17.25"></line>
-                                    <line x1="9.25" y1="14" x2="6" y2="17.25"></line>
-                                </svg>
-                                Print
-                            </a>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -256,7 +262,7 @@
                             </td>
                             <td class="text-center">
                                 @if($aset->bukti_barang_url)
-                                    <a href="{{ $aset->bukti_barang_url }}" target="_blank" class="btn btn-ghost-blue btn-sm">
+                                    <a href="{{ $aset->bukti_barang_url }}" target="_blank" class="btn btn-ghost-blue btn-md px-3 py-2">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                                             <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
@@ -270,7 +276,7 @@
                             </td>
                             <td class="text-center">
                                 @if($aset->bukti_berita_url)
-                                    <a href="{{ $aset->bukti_berita_url }}" target="_blank" class="btn btn-ghost-blue btn-sm">
+                                    <a href="{{ $aset->bukti_berita_url }}" target="_blank" class="btn btn-ghost-blue btn-md px-3 py-2">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                                             <path d="M16 6h3a1 1 0 0 1 1 1v11a2 2 0 0 1 -4 0v-13a1 1 0 0 0 -1 -1h-10a1 1 0 0 0 -1 1v12a3 3 0 0 0 3 3h11"></path>
@@ -283,35 +289,44 @@
                                     <span class="text-muted">-</span>
                                 @endif
                             </td>
-                            <td>
-                                <div class="btn-group" role="group">
-                                    <a href="{{ route('asets.show', $aset->id) }}" class="btn btn-ghost-blue btn-sm" title="Lihat Detail">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                            <circle cx="12" cy="12" r="2"></circle>
-                                            <path d="M22 12c-2.667 4 -6 6 -10 6s-7.333 -2 -10 -6c2.667 -4 6 -6 10 -6s7.333 2 10 6"></path>
-                                        </svg>
-                                    </a>
-                                    <a href="{{ route('asets.edit', $aset->id) }}" class="btn btn-ghost-yellow btn-sm" title="Edit">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                            <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path>
-                                            <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"></path>
-                                            <path d="M16 5l3 3"></path>
-                                        </svg>
-                                    </a>
-                                    <button class="btn btn-ghost-red btn-sm" onclick="confirmDelete('{{ route('asets.destroy', $aset->id) }}')" title="Hapus">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                            <line x1="4" y1="7" x2="20" y2="7"></line>
-                                            <line x1="10" y1="11" x2="10" y2="17"></line>
-                                            <line x1="14" y1="11" x2="14" y2="17"></line>
-                                            <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path>
-                                            <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ route('asets.show', $aset->id) }}" class="btn btn-ghost-blue btn-md px-3 py-2" title="Lihat Detail">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-md" width="22" height="22" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                <circle cx="12" cy="12" r="2"></circle>
+                                                <path d="M22 12c-2.667 4 -6 6 -10 6s-7.333 -2 -10 -6c2.667 -4 6 -6 10 -6s7.333 2 10 6"></path>
+                                            </svg>
+                                        </a>
+                                        <a href="{{ route('asets.edit', $aset->id) }}" class="btn btn-ghost-yellow btn-md px-3 py-2" title="Edit">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-md" width="22" height="22" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path>
+                                                <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"></path>
+                                                <path d="M16 5l3 3"></path>
+                                            </svg>
+                                        </a>
+                                        <button class="btn btn-ghost-red btn-md px-3 py-2" onclick="confirmDelete('{{ route('asets.destroy', $aset->id) }}')" title="Hapus">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-md" width="22" height="22" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                <line x1="4" y1="7" x2="20" y2="7"></line>
+                                                <line x1="10" y1="11" x2="10" y2="17"></line>
+                                                <line x1="14" y1="11" x2="14" y2="17"></line>
+                                                <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path>
+                                                <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path>
+                                            </svg>
+                                        </button>
+                                        <a href="{{ route('asets.downloadPdf', $aset->id) }}" class="btn btn-ghost-purple btn-md px-3 py-2" title="Download PDF">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-md" width="22" height="22" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                                <path d="M12 3v12m0 0l-4-4m4 4l4-4"/>
+                                                <rect x="4" y="17" width="16" height="4" rx="2"/>
+                                            </svg>
+                                            Download PDF
+                                        </a>
+                                    </div>
+                                </td>
+
                         </tr>
                     @empty
                         <tr>
