@@ -156,7 +156,7 @@
             border-radius: var(--border-radius);
             padding: 1.2rem 1rem;
             margin-bottom: 2rem;
-            box-shadow: 0 2px 8px rgba(14,165,233,0.08);
+            box-shadow: 0 2px 4px rgba(14,165,233,0.08);
         }
 
         .hierarchy-display h6 {
@@ -232,25 +232,33 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, var(--primary-color) 0%, #3b82f6 100%);
+            background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+            color: #fff !important;
             border: none;
             box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+            opacity: 1 !important;
         }
 
-        .btn-primary:hover {
-            transform: translateY(-1.5px);
-            box-shadow: 0 5px 18px rgba(37, 99, 235, 0.4);
+        .btn-primary:hover,
+        .btn-primary:focus {
+            background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+            color: #fff !important;
+            opacity: 1 !important;
         }
 
         .btn-secondary {
-            background: linear-gradient(135deg, var(--secondary-color) 0%, #6b7280 100%);
+            background: linear-gradient(135deg, #64748b 0%, #6b7280 100%);
+            color: #fff !important;
             border: none;
             box-shadow: 0 4px 14px rgba(100, 116, 139, 0.3);
+            opacity: 1 !important;
         }
 
-        .btn-secondary:hover {
-            transform: translateY(-1.5px);
-            box-shadow: 0 5px 18px rgba(100, 116, 139, 0.4);
+        .btn-secondary:hover,
+        .btn-secondary:focus {
+            background: linear-gradient(135deg, #475569 0%, #64748b 100%);
+            color: #fff !important;
+            opacity: 1 !important;
         }
 
         .alert {
@@ -389,10 +397,12 @@
                         <div class="col-md-4">
                             <div class="dropdown-item">
                                 <label class="dropdown-label">1. Akun <span class="required-field">*</span></label>
+                                <!-- Akun -->
                                 <select class="form-select" id="akun" name="akun_id" required>
                                     <option value="">Pilih Akun</option>
                                     @foreach ($akuns as $akun)
-                                        <option value="{{ $akun->id }}" data-kode="{{ $akun->kode }}" {{ (old('akun_id', $selectedHierarchy['akun']->id ?? '') == $akun->id) ? 'selected' : '' }}>
+                                        <option value="{{ $akun->id }}"
+                                            {{ old('akun_id', $selectedValues['akun_id'] ?? '') == $akun->id ? 'selected' : '' }}>
                                             {{ $akun->kode }} - {{ $akun->nama }}
                                         </option>
                                     @endforeach
@@ -404,15 +414,15 @@
                         <div class="col-md-4">
                             <div class="dropdown-item">
                                 <label class="dropdown-label">2. Kelompok <span class="required-field">*</span></label>
-                                <select class="form-select" id="kelompok" name="kelompok_id" {{ empty($selectedHierarchy['kelompok']) ? 'disabled' : '' }} required>
+                                <!-- Kelompok -->
+                                <select class="form-select" id="kelompok" name="kelompok_id" required>
                                     <option value="">Pilih Kelompok</option>
-                                    @if(!empty($selectedHierarchy['kelompok']))
-                                        @foreach ($kelompoks as $kelompok)
-                                            <option value="{{ $kelompok->id }}" data-kode="{{ $kelompok->kode }}" {{ (old('kelompok_id', $selectedHierarchy['kelompok']->id ?? '') == $kelompok->id) ? 'selected' : '' }}>
-                                                {{ $kelompok->kode }} - {{ $kelompok->nama }}
-                                            </option>
-                                        @endforeach
-                                    @endif
+                                    @foreach ($kelompoks as $kelompok)
+                                        <option value="{{ $kelompok->id }}"
+                                            {{ old('kelompok_id', $selectedValues['kelompok_id'] ?? '') == $kelompok->id ? 'selected' : '' }}>
+                                            {{ $kelompok->kode }} - {{ $kelompok->nama }}
+                                        </option>
+                                    @endforeach
                                 </select>
                                 <i class="fas fa-spinner fa-spin loading" id="loading-kelompok"></i>
                                 <div class="error-message" id="error-kelompok"></div>
@@ -421,15 +431,15 @@
                         <div class="col-md-4">
                             <div class="dropdown-item">
                                 <label class="dropdown-label">3. Jenis <span class="required-field">*</span></label>
-                                <select class="form-select" id="jenis" name="jenis_id" {{ empty($selectedHierarchy['jenis']) ? 'disabled' : '' }} required>
+                                <!-- Jenis -->
+                                <select class="form-select" id="jenis" name="jenis_id" required>
                                     <option value="">Pilih Jenis</option>
-                                    @if(!empty($selectedHierarchy['jenis']))
-                                        @foreach ($jeniss as $jenis)
-                                            <option value="{{ $jenis->id }}" data-kode="{{ $jenis->kode }}" {{ (old('jenis_id', $selectedHierarchy['jenis']->id ?? '') == $jenis->id) ? 'selected' : '' }}>
-                                                {{ $jenis->kode }} - {{ $jenis->nama }}
-                                            </option>
-                                        @endforeach
-                                    @endif
+                                    @foreach ($jenis as $j)
+                                        <option value="{{ $j->id }}"
+                                            {{ old('jenis_id', $selectedValues['jenis_id'] ?? '') == $j->id ? 'selected' : '' }}>
+                                            {{ $j->kode }} - {{ $j->nama }}
+                                        </option>
+                                    @endforeach
                                 </select>
                                 <i class="fas fa-spinner fa-spin loading" id="loading-jenis"></i>
                                 <div class="error-message" id="error-jenis"></div>
@@ -438,15 +448,15 @@
                         <div class="col-md-4 mt-3">
                             <div class="dropdown-item">
                                 <label class="dropdown-label">4. Objek <span class="required-field">*</span></label>
-                                <select class="form-select" id="objek" name="objek_id" {{ empty($selectedHierarchy['objek']) ? 'disabled' : '' }} required>
+                                <!-- Objek -->
+                                <select class="form-select" id="objek" name="objek_id" required>
                                     <option value="">Pilih Objek</option>
-                                    @if(!empty($selectedHierarchy['objek']))
-                                        @foreach ($objeks as $objek)
-                                            <option value="{{ $objek->id }}" data-kode="{{ $objek->kode }}" {{ (old('objek_id', $selectedHierarchy['objek']->id ?? '') == $objek->id) ? 'selected' : '' }}>
-                                                {{ $objek->kode }} - {{ $objek->nama }}
-                                            </option>
-                                        @endforeach
-                                    @endif
+                                    @foreach ($objeks as $objek)
+                                        <option value="{{ $objek->id }}"
+                                            {{ old('objek_id', $selectedValues['objek_id'] ?? '') == $objek->id ? 'selected' : '' }}>
+                                            {{ $objek->kode }} - {{ $objek->nama }}
+                                        </option>
+                                    @endforeach
                                 </select>
                                 <i class="fas fa-spinner fa-spin loading" id="loading-objek"></i>
                                 <div class="error-message" id="error-objek"></div>
@@ -455,15 +465,15 @@
                         <div class="col-md-4 mt-3">
                             <div class="dropdown-item">
                                 <label class="dropdown-label">5. Rincian Objek <span class="required-field">*</span></label>
-                                <select class="form-select" id="rincian_objek" name="rincian_objek_id" {{ empty($selectedHierarchy['rincian_objek']) ? 'disabled' : '' }} required>
+                                <!-- Rincian Objek -->
+                                <select class="form-select" id="rincian_objek" name="rincian_objek_id" required>
                                     <option value="">Pilih Rincian Objek</option>
-                                    @if(!empty($selectedHierarchy['rincian_objek']))
-                                        @foreach ($rincianObjeks as $rincianObjek)
-                                            <option value="{{ $rincianObjek->id }}" data-kode="{{ $rincianObjek->kode }}" {{ (old('rincian_objek_id', $selectedHierarchy['rincian_objek']->id ?? '') == $rincianObjek->id) ? 'selected' : '' }}>
-                                                {{ $rincianObjek->kode }} - {{ $rincianObjek->nama }}
-                                            </option>
-                                        @endforeach
-                                    @endif
+                                    @foreach ($rincianObjeks as $rincianObjek)
+                                        <option value="{{ $rincianObjek->id }}"
+                                            {{ old('rincian_objek_id', $selectedValues['rincian_objek_id'] ?? '') == $rincianObjek->id ? 'selected' : '' }}>
+                                            {{ $rincianObjek->kode }} - {{ $rincianObjek->nama }}
+                                        </option>
+                                    @endforeach
                                 </select>
                                 <i class="fas fa-spinner fa-spin loading" id="loading-rincian-objek"></i>
                                 <div class="error-message" id="error-rincian-objek"></div>
@@ -472,15 +482,15 @@
                         <div class="col-md-4 mt-3">
                             <div class="dropdown-item">
                                 <label class="dropdown-label">6. Sub Rincian Objek <span class="required-field">*</span></label>
-                                <select class="form-select" id="sub_rincian_objek" name="sub_rincian_objek_id" {{ empty($selectedHierarchy['sub_rincian_objek']) ? 'disabled' : '' }} required>
+                                <!-- Sub Rincian Objek -->
+                                <select class="form-select" id="sub_rincian_objek" name="sub_rincian_objek_id" required>
                                     <option value="">Pilih Sub Rincian Objek</option>
-                                    @if(!empty($selectedHierarchy['sub_rincian_objek']))
-                                        @foreach ($subRincianObjeks as $subRincianObjek)
-                                            <option value="{{ $subRincianObjek->id }}" data-kode="{{ $subRincianObjek->kode }}" {{ (old('sub_rincian_objek_id', $selectedHierarchy['sub_rincian_objek']->id ?? '') == $subRincianObjek->id) ? 'selected' : '' }}>
-                                                {{ $subRincianObjek->kode }} - {{ $subRincianObjek->nama }}
-                                            </option>
-                                        @endforeach
-                                    @endif
+                                    @foreach ($subRincianObjeks as $subRincianObjek)
+                                        <option value="{{ $subRincianObjek->id }}"
+                                            {{ old('sub_rincian_objek_id', $selectedValues['sub_rincian_objek_id'] ?? '') == $subRincianObjek->id ? 'selected' : '' }}>
+                                            {{ $subRincianObjek->kode }} - {{ $subRincianObjek->nama }}
+                                        </option>
+                                    @endforeach
                                 </select>
                                 <i class="fas fa-spinner fa-spin loading" id="loading-sub-rincian-objek"></i>
                                 <div class="error-message" id="error-sub-rincian-objek"></div>
@@ -489,15 +499,15 @@
                         <div class="col-md-4 mt-3">
                             <div class="dropdown-item">
                                 <label class="dropdown-label">7. Sub Sub Rincian Objek <span class="required-field">*</span></label>
-                                <select class="form-select" id="sub_sub_rincian_objek" name="sub_sub_rincian_objek_id" {{ empty($selectedHierarchy['sub_sub_rincian_objek']) ? 'disabled' : '' }} required>
+                                <!-- Sub Sub Rincian Objek -->
+                                <select class="form-select" id="sub_sub_rincian_objek" name="sub_sub_rincian_objek_id" required>
                                     <option value="">Pilih Sub Sub Rincian Objek</option>
-                                    @if(!empty($selectedHierarchy['sub_sub_rincian_objek']))
-                                        @foreach ($subSubRincianObjeks as $subSubRincianObjek)
-                                            <option value="{{ $subSubRincianObjek->id }}" data-kode="{{ $subSubRincianObjek->kode }}" {{ (old('sub_sub_rincian_objek_id', $selectedHierarchy['sub_sub_rincian_objek']->id ?? '') == $subSubRincianObjek->id) ? 'selected' : '' }}>
-                                                {{ $subSubRincianObjek->kode }} - {{ $subSubRincianObjek->nama_barang }}
-                                            </option>
-                                        @endforeach
-                                    @endif
+                                    @foreach ($subSubRincianObjeks as $subSubRincianObjek)
+                                        <option value="{{ $subSubRincianObjek->id }}"
+                                            {{ old('sub_sub_rincian_objek_id', $selectedValues['sub_sub_rincian_objek_id'] ?? '') == $subSubRincianObjek->id ? 'selected' : '' }}>
+                                            {{ $subSubRincianObjek->kode }} - {{ $subSubRincianObjek->nama_barang }}
+                                        </option>
+                                    @endforeach
                                 </select>
                                 <i class="fas fa-spinner fa-spin loading" id="loading-sub-sub-rincian-objek"></i>
                                 <div class="error-message" id="error-sub-sub-rincian-objek"></div>
@@ -1147,30 +1157,51 @@
             return isValid;
         }
 
-        function updateKodeBarang() {
-            // Generate kode barang automatically when all hierarchy is selected
-            if (selectedHierarchy.akun && selectedHierarchy.kelompok && selectedHierarchy.jenis &&
-                selectedHierarchy.objek && selectedHierarchy.rincianObjek &&
-                selectedHierarchy.subRincianObjek && selectedHierarchy.subSubRincianObjek) {
-                // Generate kode barang from hierarchy
-                const kodeBarang = generateKodeFromHierarchy();
-                if (kodeBarang) {
-                    document.getElementById('kode-barang-text').textContent = kodeBarang;
-                    document.getElementById('kode_barang').value = kodeBarang;
+       function updateKodeBarang() {
+    // Pastikan semua dropdown sudah dipilih
+    if (
+        selectedHierarchy.akun && selectedHierarchy.kelompok && selectedHierarchy.jenis &&
+        selectedHierarchy.objek && selectedHierarchy.rincianObjek &&
+        selectedHierarchy.subRincianObjek && selectedHierarchy.subSubRincianObjek
+    ) {
+        // Ambil kode barang dari backend via AJAX
+        $.ajax({
+            url: '{{ route("api.asets.generate-kode-preview") }}',
+            method: 'POST',
+            data: {
+                akun_id: selectedHierarchy.akun.id,
+                kelompok_id: selectedHierarchy.kelompok.id,
+                jenis_id: selectedHierarchy.jenis.id,
+                objek_id: selectedHierarchy.objek.id,
+                rincian_objek_id: selectedHierarchy.rincianObjek.id,
+                sub_rincian_objek_id: selectedHierarchy.subRincianObjek.id,
+                sub_sub_rincian_objek_id: selectedHierarchy.subSubRincianObjek.id,
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    document.getElementById('kode-barang-text').textContent = response.kode_barang;
+                    document.getElementById('kode_barang').value = response.kode_barang;
                     document.getElementById('kode-preview').style.display = 'block';
                 }
-            } else {
-                // Jika tidak semua terpilih, tetap tampilkan kode lama jika ada
-                const existingKode = "{{ old('kode_barang', $aset->kode_barang) }}";
-                if(existingKode) {
-                     document.getElementById('kode-barang-text').textContent = existingKode;
-                     document.getElementById('kode_barang').value = existingKode;
-                     document.getElementById('kode-preview').style.display = 'block';
-                } else {
-                    hideKodePreview();
-                }
+            },
+            error: function() {
+                // Jika gagal, tetap tampilkan kode lama
+                hideKodePreview();
             }
+        });
+    } else {
+        // Jika tidak semua terpilih, tetap tampilkan kode lama jika ada
+        const existingKode = "{{ old('kode_barang', $aset->kode_barang) }}";
+        if(existingKode) {
+            document.getElementById('kode-barang-text').textContent = existingKode;
+            document.getElementById('kode_barang').value = existingKode;
+            document.getElementById('kode-preview').style.display = 'block';
+        } else {
+            hideKodePreview();
         }
+    }
+}
 
         function generateKodeFromHierarchy() {
             try {
