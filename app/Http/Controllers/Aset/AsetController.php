@@ -15,6 +15,9 @@ use Illuminate\Validation\Rule;
 use Barryvdh\DomPDF\Facade\Pdf;
 use setasign\Fpdi\Tcpdf\Fpdi;
 use Illuminate\Http\Response;
+use App\Exports\AsetExport;
+use Maatwebsite\Excel\Facades\Excel;
+
 
 class AsetController extends Controller
 {
@@ -598,6 +601,99 @@ class AsetController extends Controller
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat mengambil data dropdown.'
             ], 500);
+        }
+    }
+
+    /**
+     * Export assets to Excel
+     */
+    public function export(Request $request)
+    {
+        try {
+            // Validate request parameters
+            $request->validate([
+                'search' => 'nullable|string|max:255',
+                'tahun_perolehan' => 'nullable|integer|min:1900|max:' . date('Y'),
+                'keadaan_barang' => 'nullable|string|in:Baik,Kurang Baik,Rusak Berat'
+            ]);
+
+            // Get filter parameters (same logic as index method)
+            $query = Aset::with([
+                'subSubRincianObjek.subRincianObjek.rincianObjek.objek.jenis.kelompok.akun'
+            ]);
+
+            // Apply same filters as index method
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('nama_bidang_barang', 'like', "%{$search}%")
+                        ->orWhere('nama_jenis_barang', 'like', "%{$search}%")
+                        ->orWhere('kode_barang', 'like', "%{$search}%")
+                        ->orWhere('register', 'like', "%{$search}%");
+                });
+            }
+
+            if ($request->filled('tahun_perolehan')) {
+                $query->where('tahun_perolehan', $request->tahun_perolehan);
+            }
+
+            if ($request->filled('keadaan_barang')) {
+                $query->where('keadaan_barang', $request->keadaan_barang);
+            }
+
+            $totalRecords = $query->count();
+
+            if ($totalRecords === 0) {
+                return redirect()->back()
+                    ->with('warning', 'Tidak ada data untuk diekspor dengan filter yang dipilih.');
+            }
+
+            // Generate filename with filter info
+            $filename = 'Data_Aset_' . date('Y-m-d_H-i-s');
+
+            $filterInfo = [];
+            if ($request->filled('search')) $filterInfo[] = 'Search';
+            if ($request->filled('tahun_perolehan')) $filterInfo[] = 'Tahun' . $request->tahun_perolehan;
+            if ($request->filled('keadaan_barang')) $filterInfo[] = str_replace(' ', '', $request->keadaan_barang);
+
+            if (!empty($filterInfo)) {
+                $filename .= '_' . implode('_', $filterInfo);
+            }
+            $filename .= '.xlsx';
+
+            // Log export activity
+            Log::info('Exporting assets to Excel', [
+                'user_id' => auth()->id(),
+                'total_records' => $totalRecords,
+                'filters' => [
+                    'search' => $request->search,
+                    'tahun_perolehan' => $request->tahun_perolehan,
+                    'keadaan_barang' => $request->keadaan_barang
+                ],
+                'filename' => $filename
+            ]);
+
+            // Set memory limit for large exports
+            if ($totalRecords > 5000) {
+                ini_set('memory_limit', '512M');
+                set_time_limit(300);
+            }
+
+            // Export to Excel with filters
+            return Excel::download(
+                new AsetExport($request->search, $request->tahun_perolehan, $request->keadaan_barang),
+                $filename,
+                \Maatwebsite\Excel\Excel::XLSX
+            );
+        } catch (\Exception $e) {
+            Log::error('Error exporting assets to Excel: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'request_data' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan saat mengekspor data. Silakan coba lagi atau hubungi administrator.');
         }
     }
 

@@ -1,7 +1,7 @@
 @extends('layouts.tabler')
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid p-1">
     <div class="page-header d-print-none mb-4">
         <div class="row align-items-center">
             <div class="col">
@@ -23,29 +23,36 @@
                     </div>
                 </div>
             </div>
-            <div class="col-auto ms-auto">
-                <div class="btn-list">
-                    <button class="btn btn-outline-blue d-none d-md-inline-block">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                            <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
-                            <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"></path>
-                            <line x1="9" y1="9" x2="10" y2="9"></line>
-                            <line x1="9" y1="13" x2="15" y2="13"></line>
-                            <line x1="9" y1="17" x2="15" y2="17"></line>
-                        </svg>
-                        Export
-                    </button>
-                    <a href="{{ route('asets.create') }}" class="btn btn-blue">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                        Tambah Aset Baru
-                    </a>
-                </div>
-            </div>
+           <div class="col-auto ms-auto">
+         <div class="btn-list">
+             <form action="{{ route('asets.export') }}" method="GET" style="display: inline-block;">
+            <input type="hidden" name="search" id="export_search" value="{{ request('search') }}">
+            <input type="hidden" name="tahun_perolehan" id="export_tahun_perolehan" value="{{ request('tahun_perolehan') }}">
+            <input type="hidden" name="keadaan_barang" id="export_keadaan_barang" value="{{ request('keadaan_barang') }}">
+            <button type="submit" class="btn btn-outline-blue d-none d-md-inline-block" id="exportFormBtn">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
+                    <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"></path>
+                    <line x1="9" y1="9" x2="10" y2="9"></line>
+                    <line x1="9" y1="13" x2="15" y2="13"></line>
+                    <line x1="9" y1="17" x2="15" y2="17"></line>
+                </svg>
+                Export Excel
+            </button>
+        </form>
+
+        <a href="{{ route('asets.create') }}" class="btn btn-blue">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Tambah Aset Baru
+        </a>
+    </div>
+</div>
+
         </div>
     </div>
 
@@ -87,7 +94,7 @@
         </div>
     @endif
 
-<div class="card mb-4 shadow-sm">
+<div class="card mb-1 shadow-sm">
     <div class="card-body">
         <form method="GET" action="{{ route('asets.index') }}">
             <div class="row g-2 align-items-end">
@@ -399,10 +406,46 @@
 
 @push('page-scripts')
 <script>
+$(document).ready(function() {
+    function updateExportForm() {
+        $('#export_search').val($('#search').val() || '');
+        $('#export_tahun_perolehan').val($('#tahun_perolehan').val() || '');
+        $('#export_keadaan_barang').val($('#keadaan_barang').val() || '');
+        
+        // Update button appearance
+        const hasFilters = $('#search').val() || $('#tahun_perolehan').val() || $('#keadaan_barang').val();
+        const $btn = $('#exportFormBtn');
+        
+        if (hasFilters) {
+            $btn.removeClass('btn-outline-blue').addClass('btn-outline-success');
+            $btn.html($btn.html().replace('Export Excel', 'Export Excel (Filtered)'));
+        } else {
+            $btn.removeClass('btn-outline-success').addClass('btn-outline-blue');
+            $btn.html($btn.html().replace('Export Excel (Filtered)', 'Export Excel'));
+        }
+    }
+    
+    // Update when filters change
+    $('#search, #tahun_perolehan, #keadaan_barang').on('change input', updateExportForm);
+    updateExportForm(); // Initial call
+    
+    // Add loading state on form submit
+    $('form').on('submit', function() {
+        const $btn = $(this).find('#exportFormBtn');
+        if ($btn.length) {
+            $btn.html('<div class="spinner-border spinner-border-sm me-2"></div>Exporting...')
+                 .prop('disabled', true);
+        }
+    });
+});
+
 function confirmDelete(url) {
     if (confirm('⚠️ Apakah Anda yakin ingin menghapus aset ini?\n\nTindakan ini tidak dapat dibatalkan dan akan menghapus semua data terkait aset ini.')) {
-        document.getElementById('delete-form').action = url;
-        document.getElementById('delete-form').submit();
+        const form = document.getElementById('delete-form');
+        if (form) {
+            form.action = url;
+            form.submit();
+        }
     }
 }
 
@@ -425,11 +468,31 @@ $(document).ready(function() {
 
     // Smooth scroll to top when pagination is clicked
     $('.pagination a').on('click', function() {
-        $('html, body').animate({
-            scrollTop: $('.card').offset().top - 20
-        }, 500);
+        const cardElement = $('.card');
+        if (cardElement.length) {
+            $('html, body').animate({
+                scrollTop: cardElement.offset().top - 20
+            }, 500);
+        }
+    });
+    
+    // Add loading state to form submissions
+    $('form').on('submit', function() {
+        const submitBtn = $(this).find('button[type="submit"]');
+        if (submitBtn.length) {
+            submitBtn.prop('disabled', true);
+            const originalText = submitBtn.html();
+            submitBtn.html('<div class="spinner-border spinner-border-sm me-2" role="status"></div>Processing...');
+            
+            // Reset after 10 seconds as fallback
+            setTimeout(() => {
+                submitBtn.prop('disabled', false);
+                submitBtn.html(originalText);
+            }, 10000);
+        }
     });
 });
+
 </script>
 @endpush
 
@@ -790,6 +853,22 @@ $(document).ready(function() {
 .badge.bg-danger {
     background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%) !important;
     color: white !important;
+}
+
+#exportBtn.disabled {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.btn-outline-success:hover {
+    background-color: #198754;
+    border-color: #198754;
+    color: #fff;
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
 }
 
 /* Responsive Enhancements */

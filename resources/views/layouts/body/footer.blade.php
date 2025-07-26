@@ -1,4 +1,4 @@
-{{-- <!-- Footer Fixed -->
+<!-- Footer Fixed -->
 <footer class="footer footer-transparent d-print-none fixed-footer">
     <div class="container-xl">
         <div class="row text-center align-items-center flex-row-reverse">
@@ -49,4 +49,4 @@
 body {
     padding-bottom: 80px;
 }
-</style> --}}
+</style>

@@ -62,7 +62,7 @@ class ObjekSeeder extends Seeder
             ['jenis_id' => $jenisJalanJaringandanIrigasi->id, 'kode' => '1.3.4.02', 'nama' => 'BANGUNAN AIR'],
             ['jenis_id' => $jenisJalanJaringandanIrigasi->id, 'kode' => '1.3.4.03', 'nama' => 'INSTALASI'],
             ['jenis_id' => $jenisJalanJaringandanIrigasi->id, 'kode' => '1.3.4.04', 'nama' => 'JARINGAN'],
-
+            
             // 1.3.5
             ['jenis_id' => $jenisAsetTetapLainnya->id, 'kode' => '1.3.5.01', 'nama' => 'BAHAN PERPUSTAKAAN'],
             ['jenis_id' => $jenisAsetTetapLainnya->id, 'kode' => '1.3.5.02', 'nama' => 'BARANG BERCORAK KESENIAN/KEBUDAYAAN/OLAHRAGA'],

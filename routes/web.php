@@ -19,6 +19,7 @@ use App\Http\Controllers\Dashboards\DashboardController;
 use App\Http\Controllers\Product\ProductExportController;
 use App\Http\Controllers\Product\ProductImportController;
 use App\Http\Controllers\Aset\AsetController;
+use App\Http\Controllers\Aset\AsetLancarController;
 
 // Debug Route
 Route::get('php/', function () {
@@ -91,13 +92,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/purchases/report/export', [PurchaseController::class, 'getPurchaseReport'])->name('purchases.getPurchaseReport');
     Route::post('/purchases/report/export', [PurchaseController::class, 'exportPurchaseReport'])->name('purchases.exportPurchaseReport');
 
-
-
-// =============================
+    // =============================
     // ROUTES FOR ASET
     // =============================
-    Route::resource('asets', AsetController::class);
 
+    Route::get('/asets/export', [AsetController::class, 'export'])->name('asets.export');
+
+    Route::resource('asets', AsetController::class);
     Route::get('/asets/{id}/download-pdf', [AsetController::class, 'downloadPdf'])->name('asets.downloadPdf');
 
     // API Routes for AJAX calls - Group them for better organization
@@ -110,6 +111,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/sub-sub-rincian-objeks/{subRincianObjekId}', [AsetController::class, 'getSubSubRincianObjeks'])->name('sub-sub-rincian-objeks');
         Route::post('/generate-kode-preview', [AsetController::class, 'generateKodeBarangPreview'])->name('generate-kode-preview');
     });
+
+    // ROUTES FOR ASET LANCAR
+    Route::resource('aset-lancar', AsetLancarController::class);
 });
 
 // Auth routes

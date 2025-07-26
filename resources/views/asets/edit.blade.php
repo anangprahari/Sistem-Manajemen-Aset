@@ -691,575 +691,668 @@
             </form>
         </div>
     </div>
-
+    <!-- TAMBAHKAN JQUERY SEBELUM BOOTSTRAP JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <!-- Bootstrap JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
     <!-- SweetAlert2 JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.7.32/sweetalert2.all.min.js"></script>
 
-    <script>
-        // Variabel global untuk menyimpan hierarki yang dipilih
-        let selectedHierarchy = {
-            akun: @json(old('akun_id') ? null : ($selectedHierarchy['akun'] ?? null)),
-            kelompok: @json(old('kelompok_id') ? null : ($selectedHierarchy['kelompok'] ?? null)),
-            jenis: @json(old('jenis_id') ? null : ($selectedHierarchy['jenis'] ?? null)),
-            objek: @json(old('objek_id') ? null : ($selectedHierarchy['objek'] ?? null)),
-            rincianObjek: @json(old('rincian_objek_id') ? null : ($selectedHierarchy['rincian_objek'] ?? null)),
-            subRincianObjek: @json(old('sub_rincian_objek_id') ? null : ($selectedHierarchy['sub_rincian_objek'] ?? null)),
-            subSubRincianObjek: @json(old('sub_sub_rincian_objek_id') ? null : ($selectedHierarchy['sub_sub_rincian_objek'] ?? null))
-        };
+   <script>
+    // Variabel global untuk menyimpan hierarki yang dipilih
+    let selectedHierarchy = {
+        akun: @json($selectedHierarchy['akun'] ?? null),
+        kelompok: @json($selectedHierarchy['kelompok'] ?? null),
+        jenis: @json($selectedHierarchy['jenis'] ?? null),
+        objek: @json($selectedHierarchy['objek'] ?? null),
+        rincianObjek: @json($selectedHierarchy['rincian_objek'] ?? null),
+        subRincianObjek: @json($selectedHierarchy['sub_rincian_objek'] ?? null),
+        subSubRincianObjek: @json($selectedHierarchy['sub_sub_rincian_objek'] ?? null)
+    };
 
-        document.addEventListener('DOMContentLoaded', function () {
-            setupEventListeners();
-            updateKodeBarang(); // Update kode barang awal jika semua sudah dipilih
+    // Data untuk pre-populate (dari controller)
+    const selectedValues = @json($selectedValues ?? []);
+    const isEditMode = true;
+    let isInitializing = true;
 
-            // Show validation errors if any
-            @if($errors->any())
-                let errorMessages = '';
-                @foreach ($errors->all() as $error)
-                    errorMessages += '{{ $error }}\n';
-                @endforeach
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Validation Error',
-                    text: errorMessages,
-                });
-            @endif
-        });
+    document.addEventListener('DOMContentLoaded', function () {
+        // Setup event listeners
+        setupEventListeners();
+        
+        // Pre-load existing hierarchy pada saat edit
+        setTimeout(() => {
+            preLoadExistingHierarchy();
+        }, 100);
 
-        function setupEventListeners() {
-            // Event listeners untuk setiap dropdown
-            document.getElementById('akun')?.addEventListener('change', function () {
-                const akunId = this.value;
-                selectedHierarchy.akun = getSelectedOption(this);
-                if (akunId) {
-                    loadKelompoks(akunId);
-                    resetDropdowns(['kelompok', 'jenis', 'objek', 'rincian_objek', 'sub_rincian_objek', 'sub_sub_rincian_objek']);
-                } else {
-                    resetAllDropdowns();
-                }
-                updateHierarchyDisplay();
-                updateKodeBarang();
+        // Show validation errors if any
+        @if($errors->any())
+            let errorMessages = '';
+            @foreach ($errors->all() as $error)
+                errorMessages += '{{ $error }}\n';
+            @endforeach
+            Swal.fire({
+                icon: 'error',
+                title: 'Validation Error',
+                text: errorMessages,
             });
-
-            document.getElementById('kelompok')?.addEventListener('change', function () {
-                const kelompokId = this.value;
-                selectedHierarchy.kelompok = getSelectedOption(this);
-                if (kelompokId) {
-                    loadJenis(kelompokId);
-                    resetDropdowns(['jenis', 'objek', 'rincian_objek', 'sub_rincian_objek', 'sub_sub_rincian_objek']);
-                } else {
-                    resetDropdowns(['jenis', 'objek', 'rincian_objek', 'sub_rincian_objek', 'sub_sub_rincian_objek']);
-                }
-                updateHierarchyDisplay();
-                updateKodeBarang();
-            });
-
-            document.getElementById('jenis')?.addEventListener('change', function () {
-                const jenisId = this.value;
-                selectedHierarchy.jenis = getSelectedOption(this);
-                if (jenisId) {
-                    loadObjeks(jenisId);
-                    resetDropdowns(['objek', 'rincian_objek', 'sub_rincian_objek', 'sub_sub_rincian_objek']);
-                } else {
-                    resetDropdowns(['objek', 'rincian_objek', 'sub_rincian_objek', 'sub_sub_rincian_objek']);
-                }
-                updateHierarchyDisplay();
-                updateKodeBarang();
-            });
-
-            document.getElementById('objek')?.addEventListener('change', function () {
-                const objekId = this.value;
-                selectedHierarchy.objek = getSelectedOption(this);
-                if (objekId) {
-                    loadRincianObjeks(objekId);
-                    resetDropdowns(['rincian_objek', 'sub_rincian_objek', 'sub_sub_rincian_objek']);
-                } else {
-                    resetDropdowns(['rincian_objek', 'sub_rincian_objek', 'sub_sub_rincian_objek']);
-                }
-                updateHierarchyDisplay();
-                updateKodeBarang();
-            });
-
-            document.getElementById('rincian_objek')?.addEventListener('change', function () {
-                const rincianObjekId = this.value;
-                selectedHierarchy.rincianObjek = getSelectedOption(this);
-                if (rincianObjekId) {
-                    loadSubRincianObjeks(rincianObjekId);
-                    resetDropdowns(['sub_rincian_objek', 'sub_sub_rincian_objek']);
-                } else {
-                    resetDropdowns(['sub_rincian_objek', 'sub_sub_rincian_objek']);
-                }
-                updateHierarchyDisplay();
-                updateKodeBarang();
-            });
-
-            document.getElementById('sub_rincian_objek')?.addEventListener('change', function () {
-                const subRincianObjekId = this.value;
-                selectedHierarchy.subRincianObjek = getSelectedOption(this);
-                // Auto-fill Nama Bidang Barang
-                if (selectedHierarchy.subRincianObjek && selectedHierarchy.subRincianObjek.nama) {
-                    const namaBidangBarangInput = document.querySelector('input[name="nama_bidang_barang"]');
-                    if (namaBidangBarangInput) {
-                        namaBidangBarangInput.value = selectedHierarchy.subRincianObjek.nama;
-                    }
-                } else {
-                    // Clear field jika tidak ada pilihan
-                    const namaBidangBarangInput = document.querySelector('input[name="nama_bidang_barang"]');
-                    if (namaBidangBarangInput) {
-                        namaBidangBarangInput.value = '';
-                    }
-                }
-                if (subRincianObjekId) {
-                    loadSubSubRincianObjeks(subRincianObjekId);
-                    resetDropdowns(['sub_sub_rincian_objek']);
-                } else {
-                    resetDropdowns(['sub_sub_rincian_objek']);
-                }
-                updateHierarchyDisplay();
-                updateKodeBarang();
-            });
-
-            document.getElementById('sub_sub_rincian_objek')?.addEventListener('change', function () {
-                selectedHierarchy.subSubRincianObjek = getSelectedOption(this);
-                updateHierarchyDisplay();
-                updateKodeBarang();
-            });
-
-            // Form submission handler
-            document.getElementById('assetForm')?.addEventListener('submit', function (e) {
-                const isValid = validateDropdowns();
-                if (!isValid) {
-                    e.preventDefault();
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Oops...',
-                        text: 'Harap lengkapi semua level hierarki aset yang wajib diisi!',
-                    });
-                    return;
-                }
-                // Show loading
-                Swal.fire({
-                    title: 'Memperbarui...',
-                    text: 'Sedang memproses data aset',
-                    allowOutsideClick: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
-                });
-            });
-        }
+        @endif
+    });
 
 
-        function getSelectedOption(selectElement) {
-            if (!selectElement) return null;
-            const selectedOption = selectElement.options[selectElement.selectedIndex];
-            if (selectedOption && selectedOption.value) {
-                // Ambil kode dari data-kode attribute yang sudah diset saat populate
-                const kode = selectedOption.dataset.kode || '';
-                // Ambil nama dari text content (hilangkan bagian kode di depan)
-                let nama = selectedOption.textContent;
-                if (nama.includes(' - ')) {
-                    nama = nama.split(' - ').slice(1).join(' - '); // Ambil setelah " - "
-                }
-                return {
-                    id: selectedOption.value,
-                    nama: nama,
-                    kode: kode
-                };
-            }
-            return null;
-        }
-
-        // Fungsi untuk memuat data dan mengisi dropdown berdasarkan data yang ada
-        function populateSelect(select, data, placeholder, nameField = 'nama') {
-            if (!select) return;
-            select.innerHTML = `<option value="">${placeholder}</option>`;
-            data.forEach(item => {
-                const option = document.createElement('option');
-                option.value = item.id;
-                option.textContent = `${item.kode} - ${item[nameField]}`;
-                option.dataset.kode = item.kode;
-                select.appendChild(option);
-            });
-        }
-
-        // Fungsi-fungsi untuk memuat data dari server (seperti di create.blade.php)
-        // Anda perlu menyesuaikan URL dan struktur data sesuai dengan API Anda
-        function loadKelompoks(akunId) {
-            const select = document.getElementById('kelompok');
-            if (!select) return;
-            showLoading('kelompok');
-            fetch(`/api/asets/kelompoks/${akunId}`)
-                .then(response => {
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.success) {
-                        populateSelect(select, data.data, 'Pilih Kelompok');
-                        select.disabled = false;
-                        // Set selected value if it exists in old input or selected hierarchy
-                        const selectedValue = "{{ old('kelompok_id') }}" || (selectedHierarchy.kelompok ? selectedHierarchy.kelompok.id : '');
-                        if (selectedValue) {
-                             select.value = selectedValue;
-                        }
-                        hideError('kelompok');
+function preLoadExistingHierarchy() {
+    isInitializing = true;
+    
+    // Set akun yang sudah terpilih dari awal
+    if (selectedValues.akun_id) {
+        $('#akun').val(selectedValues.akun_id);
+        selectedHierarchy.akun = getSelectedOption(document.getElementById('akun'));
+        
+        // Load kelompok
+        loadKelompoks(selectedValues.akun_id, () => {
+            if (selectedValues.kelompok_id) {
+                $('#kelompok').val(selectedValues.kelompok_id);
+                selectedHierarchy.kelompok = getSelectedOption(document.getElementById('kelompok'));
+                
+                loadJenis(selectedValues.kelompok_id, () => {
+                    if (selectedValues.jenis_id) {
+                        $('#jenis').val(selectedValues.jenis_id);
+                        selectedHierarchy.jenis = getSelectedOption(document.getElementById('jenis'));
+                        
+                        loadObjeks(selectedValues.jenis_id, () => {
+                            if (selectedValues.objek_id) {
+                                $('#objek').val(selectedValues.objek_id);
+                                selectedHierarchy.objek = getSelectedOption(document.getElementById('objek'));
+                                
+                                loadRincianObjeks(selectedValues.objek_id, () => {
+                                    if (selectedValues.rincian_objek_id) {
+                                        $('#rincian_objek').val(selectedValues.rincian_objek_id);
+                                        selectedHierarchy.rincianObjek = getSelectedOption(document.getElementById('rincian_objek'));
+                                        
+                                        loadSubRincianObjeks(selectedValues.rincian_objek_id, () => {
+                                            if (selectedValues.sub_rincian_objek_id) {
+                                                $('#sub_rincian_objek').val(selectedValues.sub_rincian_objek_id);
+                                                selectedHierarchy.subRincianObjek = getSelectedOption(document.getElementById('sub_rincian_objek'));
+                                                
+                                                loadSubSubRincianObjeks(selectedValues.sub_rincian_objek_id, () => {
+                                                    if (selectedValues.sub_sub_rincian_objek_id) {
+                                                        $('#sub_sub_rincian_objek').val(selectedValues.sub_sub_rincian_objek_id);
+                                                        selectedHierarchy.subSubRincianObjek = getSelectedOption(document.getElementById('sub_sub_rincian_objek'));
+                                                    }
+                                                    finishInitialization();
+                                                });
+                                            } else {
+                                                finishInitialization();
+                                            }
+                                        });
+                                    } else {
+                                        finishInitialization();
+                                    }
+                                });
+                            } else {
+                                finishInitialization();
+                            }
+                        });
                     } else {
-                        showError('kelompok', data.message || 'Gagal memuat data kelompok');
-                        select.disabled = true;
+                        finishInitialization();
                     }
-                })
-                .catch(error => {
-                    console.error('Error loading kelompoks:', error);
-                    showError('kelompok', 'Terjadi kesalahan saat memuat data');
-                    select.disabled = true;
-                })
-                .finally(() => {
-                    hideLoading('kelompok');
                 });
-        }
-
-        function loadJenis(kelompokId) {
-            const select = document.getElementById('jenis');
-            if (!select) return;
-            showLoading('jenis');
-            fetch(`/api/asets/jenis/${kelompokId}`)
-                .then(response => {
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.success) {
-                        populateSelect(select, data.data, 'Pilih Jenis');
-                        select.disabled = false;
-                         const selectedValue = "{{ old('jenis_id') }}" || (selectedHierarchy.jenis ? selectedHierarchy.jenis.id : '');
-                        if (selectedValue) {
-                             select.value = selectedValue;
-                        }
-                        hideError('jenis');
-                    } else {
-                        showError('jenis', data.message || 'Gagal memuat data jenis');
-                        select.disabled = true;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading jenis:', error);
-                    showError('jenis', 'Terjadi kesalahan saat memuat data');
-                    select.disabled = true;
-                })
-                .finally(() => {
-                    hideLoading('jenis');
-                });
-        }
-
-        function loadObjeks(jenisId) {
-            const select = document.getElementById('objek');
-            if (!select) return;
-            showLoading('objek');
-            fetch(`/api/asets/objeks/${jenisId}`)
-                .then(response => {
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.success) {
-                        populateSelect(select, data.data, 'Pilih Objek');
-                        select.disabled = false;
-                         const selectedValue = "{{ old('objek_id') }}" || (selectedHierarchy.objek ? selectedHierarchy.objek.id : '');
-                        if (selectedValue) {
-                             select.value = selectedValue;
-                        }
-                        hideError('objek');
-                    } else {
-                        showError('objek', data.message || 'Gagal memuat data objek');
-                        select.disabled = true;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading objeks:', error);
-                    showError('objek', 'Terjadi kesalahan saat memuat data');
-                    select.disabled = true;
-                })
-                .finally(() => {
-                    hideLoading('objek');
-                });
-        }
-
-        function loadRincianObjeks(objekId) {
-            const select = document.getElementById('rincian_objek');
-            if (!select) return;
-            showLoading('rincian-objek');
-            fetch(`/api/asets/rincian-objeks/${objekId}`)
-                .then(response => {
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.success) {
-                        populateSelect(select, data.data, 'Pilih Rincian Objek');
-                        select.disabled = false;
-                         const selectedValue = "{{ old('rincian_objek_id') }}" || (selectedHierarchy.rincianObjek ? selectedHierarchy.rincianObjek.id : '');
-                        if (selectedValue) {
-                             select.value = selectedValue;
-                        }
-                        hideError('rincian-objek');
-                    } else {
-                        showError('rincian-objek', data.message || 'Gagal memuat data rincian objek');
-                        select.disabled = true;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading rincian objeks:', error);
-                    showError('rincian-objek', 'Terjadi kesalahan saat memuat data');
-                    select.disabled = true;
-                })
-                .finally(() => {
-                    hideLoading('rincian-objek');
-                });
-        }
-
-        function loadSubRincianObjeks(rincianObjekId) {
-            const select = document.getElementById('sub_rincian_objek');
-            if (!select) return;
-            showLoading('sub-rincian-objek');
-            fetch(`/api/asets/sub-rincian-objeks/${rincianObjekId}`)
-                .then(response => {
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.success) {
-                        populateSelect(select, data.data, 'Pilih Sub Rincian Objek');
-                        select.disabled = false;
-                         const selectedValue = "{{ old('sub_rincian_objek_id') }}" || (selectedHierarchy.subRincianObjek ? selectedHierarchy.subRincianObjek.id : '');
-                        if (selectedValue) {
-                             select.value = selectedValue;
-                        }
-                        hideError('sub-rincian-objek');
-                    } else {
-                        showError('sub-rincian-objek', data.message || 'Gagal memuat data sub rincian objek');
-                        select.disabled = true;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading sub rincian objeks:', error);
-                    showError('sub-rincian-objek', 'Terjadi kesalahan saat memuat data');
-                    select.disabled = true;
-                })
-                .finally(() => {
-                    hideLoading('sub-rincian-objek');
-                });
-        }
-
-        function loadSubSubRincianObjeks(subRincianObjekId) {
-            const select = document.getElementById('sub_sub_rincian_objek');
-            if (!select) return;
-            showLoading('sub-sub-rincian-objek');
-            fetch(`/api/asets/sub-sub-rincian-objeks/${subRincianObjekId}`)
-                .then(response => {
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.success) {
-                        populateSelect(select, data.data, 'Pilih Sub Sub Rincian Objek', 'nama_barang');
-                        select.disabled = false;
-                         const selectedValue = "{{ old('sub_sub_rincian_objek_id') }}" || (selectedHierarchy.subSubRincianObjek ? selectedHierarchy.subSubRincianObjek.id : '');
-                        if (selectedValue) {
-                             select.value = selectedValue;
-                        }
-                        hideError('sub-sub-rincian-objek');
-                    } else {
-                        showError('sub-sub-rincian-objek', data.message || 'Gagal memuat data sub sub rincian objek');
-                        select.disabled = true;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading sub sub rincian objeks:', error);
-                    showError('sub-sub-rincian-objek', 'Terjadi kesalahan saat memuat data');
-                    select.disabled = true;
-                })
-                .finally(() => {
-                    hideLoading('sub-sub-rincian-objek');
-                });
-        }
-
-        // Fungsi-fungsi helper (seperti di create.blade.php)
-        function resetDropdowns(dropdownIds) {
-            dropdownIds.forEach(id => {
-                const select = document.getElementById(id);
-                if (select) {
-                    select.innerHTML = '<option value="">Pilih...</option>';
-                    select.disabled = true;
-                    const errorId = id.replace(/_/g, '-');
-                    hideError(errorId);
-                    // Clear from selectedHierarchy
-                    const key = id.replace(/_/g, '').replace('objek', 'Objek');
-                    if (selectedHierarchy[key]) {
-                        delete selectedHierarchy[key];
-                    }
-                    // Clear Nama Bidang Barang jika sub_rincian_objek di-reset
-                    if (id === 'sub_rincian_objek') {
-                        const namaBidangBarangInput = document.querySelector('input[name="nama_bidang_barang"]');
-                        if (namaBidangBarangInput) {
-                            namaBidangBarangInput.value = '';
-                        }
-                    }
-                }
-            });
-        }
-
-        function resetAllDropdowns() {
-            resetDropdowns(['kelompok', 'jenis', 'objek', 'rincian_objek', 'sub_rincian_objek', 'sub_sub_rincian_objek']);
-            hideKodePreview();
-            selectedHierarchy = {};
-            updateHierarchyDisplay();
-        }
-
-        function showLoading(type) {
-            const loadingElement = document.getElementById(`loading-${type}`);
-            if (loadingElement) loadingElement.style.display = 'inline-block';
-        }
-
-        function hideLoading(type) {
-            const loadingElement = document.getElementById(`loading-${type}`);
-            if (loadingElement) loadingElement.style.display = 'none';
-        }
-
-        function showError(field, message) {
-            const errorElement = document.getElementById(`error-${field}`);
-            if (errorElement) {
-                errorElement.textContent = message;
-                errorElement.style.display = 'block';
-            }
-        }
-
-        function hideError(field) {
-            const errorElement = document.getElementById(`error-${field}`);
-            if (errorElement) errorElement.style.display = 'none';
-        }
-
-        function validateDropdowns() {
-            let isValid = true;
-            const dropdowns = [
-                'akun', 'kelompok', 'jenis', 'objek',
-                'rincian_objek', 'sub_rincian_objek', 'sub_sub_rincian_objek'
-            ];
-            dropdowns.forEach(dropdownId => {
-                const select = document.getElementById(dropdownId);
-                if (select && !select.value) {
-                    const fieldName = dropdownId.replace(/_/g, '-');
-                    showError(fieldName, 'Field ini wajib diisi');
-                    isValid = false;
-                }
-            });
-            return isValid;
-        }
-
-       function updateKodeBarang() {
-    // Pastikan semua dropdown sudah dipilih
-    if (
-        selectedHierarchy.akun && selectedHierarchy.kelompok && selectedHierarchy.jenis &&
-        selectedHierarchy.objek && selectedHierarchy.rincianObjek &&
-        selectedHierarchy.subRincianObjek && selectedHierarchy.subSubRincianObjek
-    ) {
-        // Ambil kode barang dari backend via AJAX
-        $.ajax({
-            url: '{{ route("api.asets.generate-kode-preview") }}',
-            method: 'POST',
-            data: {
-                akun_id: selectedHierarchy.akun.id,
-                kelompok_id: selectedHierarchy.kelompok.id,
-                jenis_id: selectedHierarchy.jenis.id,
-                objek_id: selectedHierarchy.objek.id,
-                rincian_objek_id: selectedHierarchy.rincianObjek.id,
-                sub_rincian_objek_id: selectedHierarchy.subRincianObjek.id,
-                sub_sub_rincian_objek_id: selectedHierarchy.subSubRincianObjek.id,
-                _token: '{{ csrf_token() }}'
-            },
-            success: function(response) {
-                if (response.success) {
-                    document.getElementById('kode-barang-text').textContent = response.kode_barang;
-                    document.getElementById('kode_barang').value = response.kode_barang;
-                    document.getElementById('kode-preview').style.display = 'block';
-                }
-            },
-            error: function() {
-                // Jika gagal, tetap tampilkan kode lama
-                hideKodePreview();
+            } else {
+                finishInitialization();
             }
         });
     } else {
-        // Jika tidak semua terpilih, tetap tampilkan kode lama jika ada
-        const existingKode = "{{ old('kode_barang', $aset->kode_barang) }}";
-        if(existingKode) {
-            document.getElementById('kode-barang-text').textContent = existingKode;
-            document.getElementById('kode_barang').value = existingKode;
-            document.getElementById('kode-preview').style.display = 'block';
-        } else {
-            hideKodePreview();
-        }
+        finishInitialization();
     }
 }
 
-        function generateKodeFromHierarchy() {
-            try {
-                if (!selectedHierarchy.subSubRincianObjek?.kode) {
-                    return null;
+// Tambahkan function baru untuk menyelesaikan inisialisasi
+function finishInitialization() {
+    // PENTING: Reset flag isInitializing agar event listener bisa berfungsi
+    isInitializing = false;
+    
+    // Update display dan kode barang
+    updateHierarchyDisplay();
+    updateKodeBarang();
+    
+    console.log('Initialization completed. Event listeners are now active.');
+}
+
+
+function setupEventListeners() {
+    // Event listeners untuk setiap dropdown - gunakan jQuery konsisten
+    $('#akun').off('change').on('change', function () {
+        if (isInitializing) return;
+        
+        const akunId = this.value;
+        selectedHierarchy.akun = getSelectedOption(this);
+        if (akunId) {
+            loadKelompoks(akunId, () => {
+                resetDropdowns(['kelompok', 'jenis', 'objek', 'rincian_objek', 'sub_rincian_objek', 'sub_sub_rincian_objek']);
+                updateHierarchyDisplay();
+                updateKodeBarang();
+            });
+        } else {
+            resetAllDropdowns();
+        }
+    });
+
+    $('#kelompok').off('change').on('change', function () {
+        if (isInitializing) return;
+        
+        const kelompokId = this.value;
+        selectedHierarchy.kelompok = getSelectedOption(this);
+        if (kelompokId) {
+            loadJenis(kelompokId, () => {
+                resetDropdowns(['jenis', 'objek', 'rincian_objek', 'sub_rincian_objek', 'sub_sub_rincian_objek']);
+                updateHierarchyDisplay();
+                updateKodeBarang();
+            });
+        } else {
+            resetDropdowns(['jenis', 'objek', 'rincian_objek', 'sub_rincian_objek', 'sub_sub_rincian_objek']);
+            updateHierarchyDisplay();
+            updateKodeBarang();
+        }
+    });
+
+    $('#jenis').off('change').on('change', function () {
+        if (isInitializing) return;
+        
+        const jenisId = this.value;
+        selectedHierarchy.jenis = getSelectedOption(this);
+        if (jenisId) {
+            loadObjeks(jenisId, () => {
+                resetDropdowns(['objek', 'rincian_objek', 'sub_rincian_objek', 'sub_sub_rincian_objek']);
+                updateHierarchyDisplay();
+                updateKodeBarang();
+            });
+        } else {
+            resetDropdowns(['objek', 'rincian_objek', 'sub_rincian_objek', 'sub_sub_rincian_objek']);
+            updateHierarchyDisplay();
+            updateKodeBarang();
+        }
+    });
+
+    $('#objek').off('change').on('change', function () {
+        if (isInitializing) return;
+        
+        const objekId = this.value;
+        selectedHierarchy.objek = getSelectedOption(this);
+        if (objekId) {
+            loadRincianObjeks(objekId, () => {
+                resetDropdowns(['rincian_objek', 'sub_rincian_objek', 'sub_sub_rincian_objek']);
+                updateHierarchyDisplay();
+                updateKodeBarang();
+            });
+        } else {
+            resetDropdowns(['rincian_objek', 'sub_rincian_objek', 'sub_sub_rincian_objek']);
+            updateHierarchyDisplay();
+            updateKodeBarang();
+        }
+    });
+
+    $('#rincian_objek').off('change').on('change', function () {
+        if (isInitializing) return;
+        
+        const rincianObjekId = this.value;
+        selectedHierarchy.rincianObjek = getSelectedOption(this);
+        if (rincianObjekId) {
+            loadSubRincianObjeks(rincianObjekId, () => {
+                resetDropdowns(['sub_rincian_objek', 'sub_sub_rincian_objek']);
+                updateHierarchyDisplay();
+                updateKodeBarang();
+            });
+        } else {
+            resetDropdowns(['sub_rincian_objek', 'sub_sub_rincian_objek']);
+            updateHierarchyDisplay();
+            updateKodeBarang();
+        }
+    });
+
+    $('#sub_rincian_objek').off('change').on('change', function () {
+        if (isInitializing) return;
+        
+        const subRincianObjekId = this.value;
+        selectedHierarchy.subRincianObjek = getSelectedOption(this);
+        
+        // Auto-fill Nama Bidang Barang
+        if (selectedHierarchy.subRincianObjek && selectedHierarchy.subRincianObjek.nama) {
+            $('input[name="nama_bidang_barang"]').val(selectedHierarchy.subRincianObjek.nama);
+        } else {
+            $('input[name="nama_bidang_barang"]').val('');
+        }
+        
+        if (subRincianObjekId) {
+            loadSubSubRincianObjeks(subRincianObjekId, () => {
+                resetDropdowns(['sub_sub_rincian_objek']);
+                updateHierarchyDisplay();
+                updateKodeBarang();
+            });
+        } else {
+            resetDropdowns(['sub_sub_rincian_objek']);
+            updateHierarchyDisplay();
+            updateKodeBarang();
+        }
+    });
+
+    $('#sub_sub_rincian_objek').off('change').on('change', function () {
+        if (isInitializing) return;
+        
+        selectedHierarchy.subSubRincianObjek = getSelectedOption(this);
+        updateHierarchyDisplay();
+        updateKodeBarang();
+    });
+
+    // Form submission handler
+    $('#assetForm').off('submit').on('submit', function (e) {
+        const isValid = validateDropdowns();
+        if (!isValid) {
+            e.preventDefault();
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: 'Harap lengkapi semua level hierarki aset yang wajib diisi!',
+            });
+            return;
+        }
+        // Show loading
+        Swal.fire({
+            title: 'Memperbarui...',
+            text: 'Sedang memproses data aset',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+    });
+}
+
+    function getSelectedOption(selectElement) {
+        if (!selectElement) return null;
+        const selectedOption = selectElement.options[selectElement.selectedIndex];
+        if (selectedOption && selectedOption.value) {
+            // Ambil kode dari data-kode attribute yang sudah diset saat populate
+            const kode = selectedOption.dataset.kode || '';
+            // Ambil nama dari text content (hilangkan bagian kode di depan)
+            let nama = selectedOption.textContent;
+            if (nama.includes(' - ')) {
+                nama = nama.split(' - ').slice(1).join(' - '); // Ambil setelah " - "
+            }
+            return {
+                id: selectedOption.value,
+                nama: nama,
+                kode: kode
+            };
+        }
+        return null;
+    }
+
+    // Fungsi untuk memuat data dan mengisi dropdown berdasarkan data yang ada
+    function populateSelect(select, data, placeholder, nameField = 'nama') {
+        if (!select) return;
+        $(select).html(`<option value="">${placeholder}</option>`);
+        
+        data.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item.id;
+            option.textContent = `${item.kode} - ${item[nameField]}`;
+            option.dataset.kode = item.kode;
+            select.appendChild(option);
+        });
+        
+        $(select).prop('disabled', false);
+    }
+
+    // Fungsi-fungsi untuk memuat data dari server dengan callback
+    function loadKelompoks(akunId, callback = null) {
+        const select = document.getElementById('kelompok');
+        if (!select) return;
+        showLoading('kelompok');
+        
+        $.ajax({
+            url: `/api/asets/kelompoks/${akunId}`,
+            method: 'GET',
+            success: function(data) {
+                if (data.success) {
+                    populateSelect(select, data.data, 'Pilih Kelompok');
+                    hideError('kelompok');
+                    if (callback) callback();
+                } else {
+                    showError('kelompok', data.message || 'Gagal memuat data kelompok');
+                    $(select).prop('disabled', true);
                 }
-                let kode = selectedHierarchy.subSubRincianObjek.kode;
-                return kode;
-            } catch (error) {
-                console.error('Error generating kode barang:', error);
-                return null;
+            },
+            error: function() {
+                showError('kelompok', 'Terjadi kesalahan saat memuat data');
+                $(select).prop('disabled', true);
+            },
+            complete: function() {
+                hideLoading('kelompok');
+            }
+        });
+    }
+
+    function loadJenis(kelompokId, callback = null) {
+        const select = document.getElementById('jenis');
+        if (!select) return;
+        showLoading('jenis');
+        
+        $.ajax({
+            url: `/api/asets/jenis/${kelompokId}`,
+            method: 'GET',
+            success: function(data) {
+                if (data.success) {
+                    populateSelect(select, data.data, 'Pilih Jenis');
+                    hideError('jenis');
+                    if (callback) callback();
+                } else {
+                    showError('jenis', data.message || 'Gagal memuat data jenis');
+                    $(select).prop('disabled', true);
+                }
+            },
+            error: function() {
+                showError('jenis', 'Terjadi kesalahan saat memuat data');
+                $(select).prop('disabled', true);
+            },
+            complete: function() {
+                hideLoading('jenis');
+            }
+        });
+    }
+
+    function loadObjeks(jenisId, callback = null) {
+        const select = document.getElementById('objek');
+        if (!select) return;
+        showLoading('objek');
+        
+        $.ajax({
+            url: `/api/asets/objeks/${jenisId}`,
+            method: 'GET',
+            success: function(data) {
+                if (data.success) {
+                    populateSelect(select, data.data, 'Pilih Objek');
+                    hideError('objek');
+                    if (callback) callback();
+                } else {
+                    showError('objek', data.message || 'Gagal memuat data objek');
+                    $(select).prop('disabled', true);
+                }
+            },
+            error: function() {
+                showError('objek', 'Terjadi kesalahan saat memuat data');
+                $(select).prop('disabled', true);
+            },
+            complete: function() {
+                hideLoading('objek');
+            }
+        });
+    }
+
+    function loadRincianObjeks(objekId, callback = null) {
+        const select = document.getElementById('rincian_objek');
+        if (!select) return;
+        showLoading('rincian-objek');
+        
+        $.ajax({
+            url: `/api/asets/rincian-objeks/${objekId}`,
+            method: 'GET',
+            success: function(data) {
+                if (data.success) {
+                    populateSelect(select, data.data, 'Pilih Rincian Objek');
+                    hideError('rincian-objek');
+                    if (callback) callback();
+                } else {
+                    showError('rincian-objek', data.message || 'Gagal memuat data rincian objek');
+                    $(select).prop('disabled', true);
+                }
+            },
+            error: function() {
+                showError('rincian-objek', 'Terjadi kesalahan saat memuat data');
+                $(select).prop('disabled', true);
+            },
+            complete: function() {
+                hideLoading('rincian-objek');
+            }
+        });
+    }
+
+    function loadSubRincianObjeks(rincianObjekId, callback = null) {
+        const select = document.getElementById('sub_rincian_objek');
+        if (!select) return;
+        showLoading('sub-rincian-objek');
+        
+        $.ajax({
+            url: `/api/asets/sub-rincian-objeks/${rincianObjekId}`,
+            method: 'GET',
+            success: function(data) {
+                if (data.success) {
+                    populateSelect(select, data.data, 'Pilih Sub Rincian Objek');
+                    hideError('sub-rincian-objek');
+                    if (callback) callback();
+                } else {
+                    showError('sub-rincian-objek', data.message || 'Gagal memuat data sub rincian objek');
+                    $(select).prop('disabled', true);
+                }
+            },
+            error: function() {
+                showError('sub-rincian-objek', 'Terjadi kesalahan saat memuat data');
+                $(select).prop('disabled', true);
+            },
+            complete: function() {
+                hideLoading('sub-rincian-objek');
+            }
+        });
+    }
+
+    function loadSubSubRincianObjeks(subRincianObjekId, callback = null) {
+        const select = document.getElementById('sub_sub_rincian_objek');
+        if (!select) return;
+        showLoading('sub-sub-rincian-objek');
+        
+        $.ajax({
+            url: `/api/asets/sub-sub-rincian-objeks/${subRincianObjekId}`,
+            method: 'GET',
+            success: function(data) {
+                if (data.success) {
+                    populateSelect(select, data.data, 'Pilih Sub Sub Rincian Objek', 'nama_barang');
+                    hideError('sub-sub-rincian-objek');
+                    if (callback) callback();
+                } else {
+                    showError('sub-sub-rincian-objek', data.message || 'Gagal memuat data sub sub rincian objek');
+                    $(select).prop('disabled', true);
+                }
+            },
+            error: function() {
+                showError('sub-sub-rincian-objek', 'Terjadi kesalahan saat memuat data');
+                $(select).prop('disabled', true);
+            },
+            complete: function() {
+                hideLoading('sub-sub-rincian-objek');
+            }
+        });
+    }
+
+   // Ganti function resetDropdowns() dengan kode berikut:
+function resetDropdowns(dropdownIds) {
+    dropdownIds.forEach(id => {
+        const select = document.getElementById(id);
+        if (select) {
+            $(select).html('<option value="">Pilih...</option>').prop('disabled', true);
+            const errorId = id.replace(/_/g, '-');
+            hideError(errorId);
+            
+            // Clear from selectedHierarchy dengan mapping yang benar
+            const key = getHierarchyKey(id);
+            if (key && selectedHierarchy[key]) {
+                delete selectedHierarchy[key];
+            }
+            
+            // Clear Nama Bidang Barang jika sub_rincian_objek di-reset
+            if (id === 'sub_rincian_objek') {
+                $('input[name="nama_bidang_barang"]').val('');
             }
         }
+    });
+}
 
-        function hideKodePreview() {
-            const preview = document.getElementById('kode-preview');
-            const kodeInput = document.getElementById('kode_barang');
-            if (preview) preview.style.display = 'none';
-            if (kodeInput) kodeInput.value = '';
-        }
+// Perbaiki function getHierarchyKey()
+function getHierarchyKey(dropdownId) {
+    const mapping = {
+        'akun': 'akun',
+        'kelompok': 'kelompok',
+        'jenis': 'jenis', 
+        'objek': 'objek',
+        'rincian_objek': 'rincianObjek',
+        'sub_rincian_objek': 'subRincianObjek',
+        'sub_sub_rincian_objek': 'subSubRincianObjek'
+    };
+    return mapping[dropdownId];
+}
 
-        function updateHierarchyDisplay() {
-            const hierarchyDisplay = document.getElementById('hierarchy-display');
-            const hierarchyContent = document.getElementById('hierarchy-content');
-            if (!hierarchyDisplay || !hierarchyContent) return;
-            let content = '';
-            if (selectedHierarchy.akun) {
-                content += `<div class="hierarchy-item"><span class="hierarchy-level">Akun:</span> ${selectedHierarchy.akun.nama}</div>`;
+   // Ganti function resetAllDropdowns() dengan kode berikut:
+function resetAllDropdowns() {
+    resetDropdowns(['kelompok', 'jenis', 'objek', 'rincian_objek', 'sub_rincian_objek', 'sub_sub_rincian_objek']);
+    hideKodePreview();
+    
+    // Reset selectedHierarchy tapi pertahankan akun
+    const currentAkun = selectedHierarchy.akun;
+    selectedHierarchy = {};
+    if (currentAkun) {
+        selectedHierarchy.akun = currentAkun;
+    }
+    
+    updateHierarchyDisplay();
+}
+
+    function showLoading(type) {
+        $(`#loading-${type}`).show();
+    }
+
+    function hideLoading(type) {
+        $(`#loading-${type}`).hide();
+    }
+
+    function showError(field, message) {
+        $(`#error-${field}`).text(message).show();
+    }
+
+    function hideError(field) {
+        $(`#error-${field}`).hide();
+    }
+
+    function validateDropdowns() {
+        let isValid = true;
+        const dropdowns = [
+            'akun', 'kelompok', 'jenis', 'objek',
+            'rincian_objek', 'sub_rincian_objek', 'sub_sub_rincian_objek'
+        ];
+        
+        dropdowns.forEach(dropdownId => {
+            const select = document.getElementById(dropdownId);
+            if (select && !select.value) {
+                const fieldName = dropdownId.replace(/_/g, '-');
+                showError(fieldName, 'Field ini wajib diisi');
+                isValid = false;
             }
-            if (selectedHierarchy.kelompok) {
-                content += `<div class="hierarchy-item"><span class="hierarchy-level">Kelompok:</span> ${selectedHierarchy.kelompok.nama}</div>`;
-            }
-            if (selectedHierarchy.jenis) {
-                content += `<div class="hierarchy-item"><span class="hierarchy-level">Jenis:</span> ${selectedHierarchy.jenis.nama}</div>`;
-            }
-            if (selectedHierarchy.objek) {
-                content += `<div class="hierarchy-item"><span class="hierarchy-level">Objek:</span> ${selectedHierarchy.objek.nama}</div>`;
-            }
-            if (selectedHierarchy.rincianObjek) {
-                content += `<div class="hierarchy-item"><span class="hierarchy-level">Rincian Objek:</span> ${selectedHierarchy.rincianObjek.nama}</div>`;
-            }
-            if (selectedHierarchy.subRincianObjek) {
-                content += `<div class="hierarchy-item"><span class="hierarchy-level">Sub Rincian Objek:</span> ${selectedHierarchy.subRincianObjek.nama}</div>`;
-            }
-            if (selectedHierarchy.subSubRincianObjek) {
-                content += `<div class="hierarchy-item"><span class="hierarchy-level">Sub Sub Rincian:</span> ${selectedHierarchy.subSubRincianObjek.nama}</div>`;
-            }
-            if (content) {
-                hierarchyContent.innerHTML = content;
-                hierarchyDisplay.style.display = 'block';
+        });
+        return isValid;
+    }
+
+    function updateKodeBarang() {
+        // Pastikan semua dropdown sudah dipilih
+        if (
+            selectedHierarchy.akun && selectedHierarchy.kelompok && selectedHierarchy.jenis &&
+            selectedHierarchy.objek && selectedHierarchy.rincianObjek &&
+            selectedHierarchy.subRincianObjek && selectedHierarchy.subSubRincianObjek
+        ) {
+            // Ambil kode barang dari backend via AJAX
+            $.ajax({
+                url: '{{ route("api.asets.generate-kode-preview") }}',
+                method: 'POST',
+                data: {
+                    akun_id: selectedHierarchy.akun.id,
+                    kelompok_id: selectedHierarchy.kelompok.id,
+                    jenis_id: selectedHierarchy.jenis.id,
+                    objek_id: selectedHierarchy.objek.id,
+                    rincian_objek_id: selectedHierarchy.rincianObjek.id,
+                    sub_rincian_objek_id: selectedHierarchy.subRincianObjek.id,
+                    sub_sub_rincian_objek_id: selectedHierarchy.subSubRincianObjek.id,
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $('#kode-barang-text').text(response.kode_barang);
+                        $('#kode_barang').val(response.kode_barang);
+                        $('#kode-preview').show();
+                    }
+                },
+                error: function() {
+                    // Jika gagal, tetap tampilkan kode lama
+                    const existingKode = "{{ old('kode_barang', $aset->kode_barang) }}";
+                    if(existingKode) {
+                        $('#kode-barang-text').text(existingKode);
+                        $('#kode_barang').val(existingKode);
+                        $('#kode-preview').show();
+                    } else {
+                        hideKodePreview();
+                    }
+                }
+            });
+        } else {
+            const existingKode = "{{ old('kode_barang', $aset->kode_barang) }}";
+            if(existingKode) {
+                $('#kode-barang-text').text(existingKode);
+                $('#kode_barang').val(existingKode);
+                $('#kode-preview').show();
             } else {
-                hierarchyDisplay.style.display = 'none';
+                hideKodePreview();
             }
         }
+    }
 
-        function goBack() {
-            window.history.back();
+    function hideKodePreview() {
+        $('#kode-preview').hide();
+        $('#kode_barang').val('');
+    }
+
+    function updateHierarchyDisplay() {
+        const hierarchyDisplay = $('#hierarchy-display');
+        const hierarchyContent = $('#hierarchy-content');
+        
+        let content = '';
+        
+        if (selectedHierarchy.akun) {
+            content += `<div class="hierarchy-item"><span class="hierarchy-level">Akun:</span> ${selectedHierarchy.akun.nama}</div>`;
         }
-    </script>
+        if (selectedHierarchy.kelompok) {
+            content += `<div class="hierarchy-item"><span class="hierarchy-level">Kelompok:</span> ${selectedHierarchy.kelompok.nama}</div>`;
+        }
+        if (selectedHierarchy.jenis) {
+            content += `<div class="hierarchy-item"><span class="hierarchy-level">Jenis:</span> ${selectedHierarchy.jenis.nama}</div>`;
+        }
+        if (selectedHierarchy.objek) {
+            content += `<div class="hierarchy-item"><span class="hierarchy-level">Objek:</span> ${selectedHierarchy.objek.nama}</div>`;
+        }
+        if (selectedHierarchy.rincianObjek) {
+            content += `<div class="hierarchy-item"><span class="hierarchy-level">Rincian Objek:</span> ${selectedHierarchy.rincianObjek.nama}</div>`;
+        }
+        if (selectedHierarchy.subRincianObjek) {
+            content += `<div class="hierarchy-item"><span class="hierarchy-level">Sub Rincian Objek:</span> ${selectedHierarchy.subRincianObjek.nama}</div>`;
+        }
+        if (selectedHierarchy.subSubRincianObjek) {
+            content += `<div class="hierarchy-item"><span class="hierarchy-level">Sub Sub Rincian:</span> ${selectedHierarchy.subSubRincianObjek.nama}</div>`;
+        }
+        
+        if (content) {
+            hierarchyContent.html(content);
+            hierarchyDisplay.show();
+        } else {
+            hierarchyDisplay.hide();
+        }
+    }
+
+    function goBack() {
+        window.history.back();
+    }
+</script>
 </body>
 </html>

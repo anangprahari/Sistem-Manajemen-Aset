@@ -21,7 +21,7 @@
 }
 
 body {
-    background: linear-gradient(135deg, #5973e8 0%, #a3afe8 100%);
+   background: linear-gradient(120deg, #e0e7ff 0%, #f1f5f9 100%);
     min-height: 100vh;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
@@ -1210,6 +1210,11 @@ body {
             hierarchyDisplay.style.display = 'none';
         }
     }
+
+    function goBack() {
+        window.history.back();
+    }
+
 </script>
 </body>
 </html>
