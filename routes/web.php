@@ -96,8 +96,8 @@ Route::middleware(['auth'])->group(function () {
     // ROUTES FOR ASET
     // =============================
 
+    // Aset Tetap Routes
     Route::get('/asets/export', [AsetController::class, 'export'])->name('asets.export');
-
     Route::resource('asets', AsetController::class);
     Route::get('/asets/{id}/download-pdf', [AsetController::class, 'downloadPdf'])->name('asets.downloadPdf');
 
@@ -112,8 +112,21 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/generate-kode-preview', [AsetController::class, 'generateKodeBarangPreview'])->name('generate-kode-preview');
     });
 
+    // =============================
     // ROUTES FOR ASET LANCAR
+    // =============================
+
+    // Aset Lancar Routes
     Route::resource('aset-lancar', AsetLancarController::class);
+
+    // AJAX Routes untuk dropdown dinamis Aset Lancar
+    Route::prefix('ajax/aset-lancar')->name('ajax.aset-lancar.')->group(function () {
+        Route::get('/kelompok', [AsetLancarController::class, 'getKelompok'])->name('kelompok');
+        Route::get('/jenis', [AsetLancarController::class, 'getJenis'])->name('jenis');
+        Route::get('/objek', [AsetLancarController::class, 'getObjek'])->name('objek');
+        Route::get('/nomor-rekening', [AsetLancarController::class, 'getNomorRekening'])->name('nomor-rekening');
+        Route::get('/uraian', [AsetLancarController::class, 'getUraian'])->name('uraian');
+    });
 });
 
 // Auth routes
