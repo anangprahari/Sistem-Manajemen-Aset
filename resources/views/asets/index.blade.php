@@ -202,13 +202,13 @@
                                 <div class="fw-medium text-dark">{{ $aset->nama_bidang_barang }}</div>
                             </td>
                             <td>
-                                <span class="badge bg-azure-lt text-azure fw-mono">{{ $aset->kode_barang }}</span>
+                                <span class="detail-value font-mono">{{ $aset->kode_barang }}</span>
                             </td>
                             <td>
-                                <span class="badge bg-cyan-lt text-cyan fw-mono">{{ $aset->register }}</span>
+                                <span class="detail-value font-mono">{{ $aset->register }}</span>
                             </td>
                             <td>
-                                <div class="fw-bold text-primary">{{ $aset->nama_jenis_barang }}</div>
+                                <div class="detail-value font-mono">{{ $aset->nama_jenis_barang }}</div>
                             </td>
                             <td>
                                 <div class="text-muted">{{ $aset->merk_type ?? '-' }}</div>
@@ -232,13 +232,13 @@
                                 <div class="fw-medium">{{ $aset->asal_perolehan }}</div>
                             </td>
                             <td class="text-center">
-                                <span class="badge bg-indigo-lt text-indigo">{{ $aset->tahun_perolehan }}</span>
+                                <span class="detail-value font-mono">{{ $aset->tahun_perolehan }}</span>
                             </td>
                             <td>
                                 <div class="text-muted small">{{ $aset->ukuran_barang_konstruksi ?? '-' }}</div>
                             </td>
                             <td class="text-center">
-                                <span class="badge bg-teal-lt text-teal">{{ $aset->satuan }}</span>
+                                <span class="detail-value font-mono">{{ $aset->satuan }}</span>
                             </td>
                             <td class="text-center">
                                 <span class="badge bg-{{ $aset->keadaan_barang === 'Baik' ? 'success' : ($aset->keadaan_barang === 'Kurang Baik' ? 'warning' : 'danger') }}">
@@ -259,7 +259,7 @@
                                 </span>
                             </td>
                             <td class="text-center">
-                                <div class="fw-bold text-blue">{{ $aset->jumlah_barang }}</div>
+                                <div class="detail-value font-mono">{{ $aset->jumlah_barang }}</div>
                             </td>
                             <td class="text-end">
                                 <div class="fw-medium font-mono">{{ $aset->formatted_harga }}</div>
