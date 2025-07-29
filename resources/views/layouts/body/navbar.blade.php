@@ -546,11 +546,11 @@
             <path d="M21 7v10"/>
             <path d="M22 7h-2l-2 -2h-6l-2 2h-2"/>
         </svg>
-        <span>{{ __('Aset') }}</span>
+       <span>{{ __('Aset') }}</span>
     </a>
     <div class="dropdown-menu" id="asetDropdown">
         <a class="dropdown-item {{ request()->is('asets*') ? 'active' : '' }}" href="{{ route('asets.index') }}">Aset Tetap</a>
-        <a class="dropdown-item {{ request()->is('aset-lancar*') ? 'active' : '' }}" href="{{ route('aset-lancar.index') }}">Aset Lancar</a>
+        <a class="dropdown-item {{ request()->is('aset-lancars*') ? 'active' : '' }}" href="{{ route('aset-lancars.index') }}">Aset Lancar</a>
     </div>
 </div>
 
@@ -684,7 +684,6 @@
             </div>
         </nav>
     </div>
-
     {{-- Header --}}
     @include('layouts.body.header')
 

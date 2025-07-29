@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             KelompokSeeder::class,
             JenisSeeder::class,
             ObjekSeeder::class,
+            RekeningUraianSeeder::class,
             // RincianObjekSeeder::class,
             // SubRincianObjekSeeder::class,
             // SubSubRincianObjekSeeder::class,

@@ -117,15 +117,12 @@ Route::middleware(['auth'])->group(function () {
     // =============================
 
     // Aset Lancar Routes
-    Route::resource('aset-lancar', AsetLancarController::class);
+    Route::get('/aset-lancars/export', [AsetLancarController::class, 'export'])->name('aset-lancars.export');
+    Route::resource('aset-lancars', AsetLancarController::class);
 
-    // AJAX Routes untuk dropdown dinamis Aset Lancar
-    Route::prefix('ajax/aset-lancar')->name('ajax.aset-lancar.')->group(function () {
-        Route::get('/kelompok', [AsetLancarController::class, 'getKelompok'])->name('kelompok');
-        Route::get('/jenis', [AsetLancarController::class, 'getJenis'])->name('jenis');
-        Route::get('/objek', [AsetLancarController::class, 'getObjek'])->name('objek');
-        Route::get('/nomor-rekening', [AsetLancarController::class, 'getNomorRekening'])->name('nomor-rekening');
-        Route::get('/uraian', [AsetLancarController::class, 'getUraian'])->name('uraian');
+    // API Routes for AJAX calls - Group them for better organization
+    Route::prefix('api/aset-lancars')->name('api.aset-lancars.')->group(function () {
+        Route::get('/rekening-uraian/{id}', [AsetLancarController::class, 'getRekeningUraian'])->name('rekening-uraian');
     });
 });
 

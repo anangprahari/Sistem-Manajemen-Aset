@@ -2,21 +2,41 @@
 
 namespace App\Http\Controllers\Aset;
 
-use App\Models\AsetLancar;
-use App\Models\KodeRekening;
-use Illuminate\Http\Request;
-use Illuminate\View\View;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\JsonResponse;
+use App\Models\AsetLancar;
+use App\Models\RekeningUraian;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
 
 class AsetLancarController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $asetLancars = AsetLancar::with('kodeRekening')->latest()->paginate(10);
+        $query = AsetLancar::with('rekeningUraian');
+
+        // Search functionality
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_kegiatan', 'like', "%{$search}%")
+                    ->orWhere('uraian_kegiatan', 'like', "%{$search}%")
+                    ->orWhere('uraian_jenis_barang', 'like', "%{$search}%")
+                    ->orWhereHas('rekeningUraian', function ($q) use ($search) {
+                        $q->where('kode_rekening', 'like', "%{$search}%")
+                            ->orWhere('uraian', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        $asetLancars = $query->orderBy('created_at', 'desc')->paginate(10);
+
         return view('asets.asetlancar.index', compact('asetLancars'));
     }
 
@@ -25,9 +45,8 @@ class AsetLancarController extends Controller
      */
     public function create()
     {
-        // Ambil data akun untuk dropdown pertama
-        $akuns = KodeRekening::distinctAkun()->get();
-        return view('asets.asetlancar.create', compact('akuns'));
+        $rekeningUraians = RekeningUraian::orderBy('kode_rekening')->get();
+        return view('asets.asetlancar.create', compact('rekeningUraians'));
     }
 
     /**
@@ -35,31 +54,28 @@ class AsetLancarController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'kode_rekening_id' => 'required|exists:kode_rekenings,id',
-            'uraian_barang' => 'required|string|max:255',
+        $request->validate([
+            'rekening_uraian_id' => 'required|exists:rekening_uraians,id',
             'nama_kegiatan' => 'required|string|max:255',
-            'uraian_kegiatan' => 'required|string',
-            'uraian_jenis_barang' => 'required|string',
+            'uraian_kegiatan' => 'nullable|string',
+            'uraian_jenis_barang' => 'nullable|string',
             'saldo_awal_unit' => 'required|integer|min:0',
             'saldo_awal_harga_satuan' => 'required|numeric|min:0',
             'mutasi_tambah_unit' => 'nullable|integer|min:0',
-            'mutasi_tambah_harga' => 'nullable|numeric|min:0',
+            'mutasi_tambah_harga_satuan' => 'nullable|numeric|min:0',
             'mutasi_kurang_unit' => 'nullable|integer|min:0',
-            'mutasi_kurang_nilai' => 'nullable|numeric|min:0',
+            'mutasi_kurang_nilai_total' => 'nullable|numeric|min:0',
         ]);
 
-        // Hitung nilai otomatis
-        $validated['saldo_awal_total'] = $validated['saldo_awal_unit'] * $validated['saldo_awal_harga_satuan'];
-        $validated['mutasi_tambah_nilai'] = ($validated['mutasi_tambah_unit'] ?? 0) * ($validated['mutasi_tambah_harga'] ?? 0);
+        $data = $request->all();
 
-        // Hitung saldo akhir
-        $validated['saldo_akhir_unit'] = $validated['saldo_awal_unit'] + ($validated['mutasi_tambah_unit'] ?? 0) - ($validated['mutasi_kurang_unit'] ?? 0);
-        $validated['saldo_akhir_total'] = $validated['saldo_awal_total'] + $validated['mutasi_tambah_nilai'] - ($validated['mutasi_kurang_nilai'] ?? 0);
+        // Perhitungan otomatis
+        $data = $this->calculateValues($data);
 
-        AsetLancar::create($validated);
+        AsetLancar::create($data);
 
-        return redirect()->route('aset-lancar.index')->with('success', 'Aset lancar berhasil ditambahkan.');
+        return redirect()->route('aset-lancars.index')
+            ->with('success', 'Data aset lancar berhasil ditambahkan.');
     }
 
     /**
@@ -67,8 +83,8 @@ class AsetLancarController extends Controller
      */
     public function show(AsetLancar $asetLancar)
     {
-        $asetLancar->load('kodeRekening');
-        return view('asets.asetlancar.show', compact('asetLancar'));
+        $asetLancar->load('rekeningUraian');
+        return view('aset-lancars.show', compact('asetLancar'));
     }
 
     /**
@@ -76,9 +92,8 @@ class AsetLancarController extends Controller
      */
     public function edit(AsetLancar $asetLancar)
     {
-        $asetLancar->load('kodeRekening');
-        $akuns = KodeRekening::distinctAkun()->get();
-        return view('asets.asetlancar.edit', compact('asetLancar', 'akuns'));
+        $rekeningUraians = RekeningUraian::orderBy('kode_rekening')->get();
+        return view('aset-lancars.edit', compact('asetLancar', 'rekeningUraians'));
     }
 
     /**
@@ -86,31 +101,28 @@ class AsetLancarController extends Controller
      */
     public function update(Request $request, AsetLancar $asetLancar)
     {
-        $validated = $request->validate([
-            'kode_rekening_id' => 'required|exists:kode_rekenings,id',
-            'uraian_barang' => 'required|string|max:255',
+        $request->validate([
+            'rekening_uraian_id' => 'required|exists:rekening_uraians,id',
             'nama_kegiatan' => 'required|string|max:255',
-            'uraian_kegiatan' => 'required|string',
-            'uraian_jenis_barang' => 'required|string',
+            'uraian_kegiatan' => 'nullable|string',
+            'uraian_jenis_barang' => 'nullable|string',
             'saldo_awal_unit' => 'required|integer|min:0',
             'saldo_awal_harga_satuan' => 'required|numeric|min:0',
             'mutasi_tambah_unit' => 'nullable|integer|min:0',
-            'mutasi_tambah_harga' => 'nullable|numeric|min:0',
+            'mutasi_tambah_harga_satuan' => 'nullable|numeric|min:0',
             'mutasi_kurang_unit' => 'nullable|integer|min:0',
-            'mutasi_kurang_nilai' => 'nullable|numeric|min:0',
+            'mutasi_kurang_nilai_total' => 'nullable|numeric|min:0',
         ]);
 
-        // Hitung nilai otomatis
-        $validated['saldo_awal_total'] = $validated['saldo_awal_unit'] * $validated['saldo_awal_harga_satuan'];
-        $validated['mutasi_tambah_nilai'] = ($validated['mutasi_tambah_unit'] ?? 0) * ($validated['mutasi_tambah_harga'] ?? 0);
+        $data = $request->all();
 
-        // Hitung saldo akhir
-        $validated['saldo_akhir_unit'] = $validated['saldo_awal_unit'] + ($validated['mutasi_tambah_unit'] ?? 0) - ($validated['mutasi_kurang_unit'] ?? 0);
-        $validated['saldo_akhir_total'] = $validated['saldo_awal_total'] + $validated['mutasi_tambah_nilai'] - ($validated['mutasi_kurang_nilai'] ?? 0);
+        // Perhitungan otomatis
+        $data = $this->calculateValues($data);
 
-        $asetLancar->update($validated);
+        $asetLancar->update($data);
 
-        return redirect()->route('aset-lancar.index')->with('success', 'Aset lancar berhasil diperbarui.');
+        return redirect()->route('aset-lancars.index')
+            ->with('success', 'Data aset lancar berhasil diperbarui.');
     }
 
     /**
@@ -119,133 +131,158 @@ class AsetLancarController extends Controller
     public function destroy(AsetLancar $asetLancar)
     {
         $asetLancar->delete();
-        return redirect()->route('aset-lancar.index')->with('success', 'Aset lancar berhasil dihapus.');
+
+        return redirect()->route('aset-lancars.index')
+            ->with('success', 'Data aset lancar berhasil dihapus.');
     }
 
     /**
-     * AJAX Methods untuk dropdown dinamis
+     * Calculate automatic values
      */
-
-    /**
-     * Get kelompok berdasarkan akun
-     */
-    public function getKelompok(Request $request): JsonResponse
+    private function calculateValues($data)
     {
-        $akun = $request->get('akun');
+        // Set default values if null
+        $data['mutasi_tambah_unit'] = $data['mutasi_tambah_unit'] ?? 0;
+        $data['mutasi_tambah_harga_satuan'] = $data['mutasi_tambah_harga_satuan'] ?? 0;
+        $data['mutasi_kurang_unit'] = $data['mutasi_kurang_unit'] ?? 0;
+        $data['mutasi_kurang_nilai_total'] = $data['mutasi_kurang_nilai_total'] ?? 0;
 
-        if (!$akun) {
-            return response()->json([]);
-        }
+        // Perhitungan saldo_awal_total
+        $data['saldo_awal_total'] = $data['saldo_awal_unit'] * $data['saldo_awal_harga_satuan'];
 
-        $kelompoks = KodeRekening::kelompokByAkun($akun)->get();
+        // Perhitungan mutasi_tambah_nilai_total
+        $data['mutasi_tambah_nilai_total'] = $data['mutasi_tambah_unit'] * $data['mutasi_tambah_harga_satuan'];
 
-        $result = $kelompoks->map(function ($item) {
-            return [
-                'value' => $item->kelompok,
-                'text' => $item->kelompok . ' ' . $item->nama_kelompok
-            ];
-        });
+        // Perhitungan saldo_akhir_unit
+        $data['saldo_akhir_unit'] = $data['saldo_awal_unit'] + $data['mutasi_tambah_unit'] - $data['mutasi_kurang_unit'];
 
-        return response()->json($result);
+        // Perhitungan saldo_akhir_total
+        $data['saldo_akhir_total'] = $data['saldo_awal_total'] + $data['mutasi_tambah_nilai_total'] - $data['mutasi_kurang_nilai_total'];
+
+        return $data;
     }
 
     /**
-     * Get jenis berdasarkan akun dan kelompok
+     * Export to Excel
      */
-    public function getJenis(Request $request): JsonResponse
+    public function export(Request $request)
     {
-        $akun = $request->get('akun');
-        $kelompok = $request->get('kelompok');
+        $query = AsetLancar::with('rekeningUraian');
 
-        if (!$akun || !$kelompok) {
-            return response()->json([]);
+        // Apply search filter if exists
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_kegiatan', 'like', "%{$search}%")
+                    ->orWhere('uraian_kegiatan', 'like', "%{$search}%")
+                    ->orWhere('uraian_jenis_barang', 'like', "%{$search}%")
+                    ->orWhereHas('rekeningUraian', function ($q) use ($search) {
+                        $q->where('kode_rekening', 'like', "%{$search}%")
+                            ->orWhere('uraian', 'like', "%{$search}%");
+                    });
+            });
         }
 
-        $jenises = KodeRekening::jenisByAkunKelompok($akun, $kelompok)->get();
+        $asetLancars = $query->orderBy('created_at', 'desc')->get();
 
-        $result = $jenises->map(function ($item) {
-            return [
-                'value' => $item->jenis,
-                'text' => $item->jenis . ' ' . $item->nama_jenis
-            ];
-        });
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
 
-        return response()->json($result);
+        // Set headers
+        $headers = [
+            'A1' => 'No',
+            'B1' => 'Kode Rekening',
+            'C1' => 'Uraian Rekening',
+            'D1' => 'Nama Kegiatan',
+            'E1' => 'Uraian Kegiatan',
+            'F1' => 'Uraian Jenis Barang',
+            'G1' => 'Saldo Awal Unit',
+            'H1' => 'Saldo Awal Harga Satuan',
+            'I1' => 'Saldo Awal Total',
+            'J1' => 'Mutasi Tambah Unit',
+            'K1' => 'Mutasi Tambah Harga Satuan',
+            'L1' => 'Mutasi Tambah Nilai Total',
+            'M1' => 'Mutasi Kurang Unit',
+            'N1' => 'Mutasi Kurang Nilai Total',
+            'O1' => 'Saldo Akhir Unit',
+            'P1' => 'Saldo Akhir Total',
+        ];
+
+        foreach ($headers as $cell => $value) {
+            $sheet->setCellValue($cell, $value);
+        }
+
+        // Style headers
+        $sheet->getStyle('A1:P1')->getFont()->setBold(true);
+        $sheet->getStyle('A1:P1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A1:P1')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+
+        // Fill data
+        $row = 2;
+        foreach ($asetLancars as $index => $aset) {
+            $sheet->setCellValue('A' . $row, $index + 1);
+            $sheet->setCellValue('B' . $row, $aset->rekeningUraian->kode_rekening);
+            $sheet->setCellValue('C' . $row, $aset->rekeningUraian->uraian);
+            $sheet->setCellValue('D' . $row, $aset->nama_kegiatan);
+            $sheet->setCellValue('E' . $row, $aset->uraian_kegiatan);
+            $sheet->setCellValue('F' . $row, $aset->uraian_jenis_barang);
+            $sheet->setCellValue('G' . $row, $aset->saldo_awal_unit);
+            $sheet->setCellValue('H' . $row, $aset->saldo_awal_harga_satuan);
+            $sheet->setCellValue('I' . $row, $aset->saldo_awal_total);
+            $sheet->setCellValue('J' . $row, $aset->mutasi_tambah_unit);
+            $sheet->setCellValue('K' . $row, $aset->mutasi_tambah_harga_satuan);
+            $sheet->setCellValue('L' . $row, $aset->mutasi_tambah_nilai_total);
+            $sheet->setCellValue('M' . $row, $aset->mutasi_kurang_unit);
+            $sheet->setCellValue('N' . $row, $aset->mutasi_kurang_nilai_total);
+            $sheet->setCellValue('O' . $row, $aset->saldo_akhir_unit);
+            $sheet->setCellValue('P' . $row, $aset->saldo_akhir_total);
+
+            // Apply borders to data rows
+            $sheet->getStyle('A' . $row . ':P' . $row)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+
+            $row++;
+        }
+
+        // Auto-size columns
+        foreach (range('A', 'P') as $column) {
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        // Format currency columns
+        $currencyColumns = ['H', 'I', 'K', 'L', 'N', 'P'];
+        foreach ($currencyColumns as $col) {
+            $sheet->getStyle($col . '2:' . $col . ($row - 1))->getNumberFormat()->setFormatCode('#,##0.00');
+        }
+
+        $writer = new Xlsx($spreadsheet);
+
+        $filename = 'aset_lancar_' . date('Y-m-d_H-i-s') . '.xlsx';
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        $writer->save('php://output');
+        exit;
     }
 
     /**
-     * Get objek berdasarkan akun, kelompok, dan jenis
+     * Get rekening uraian data for AJAX
      */
-    public function getObjek(Request $request): JsonResponse
+    public function getRekeningUraian($id)
     {
-        $akun = $request->get('akun');
-        $kelompok = $request->get('kelompok');
-        $jenis = $request->get('jenis');
+        $rekening = RekeningUraian::find($id);
 
-        if (!$akun || !$kelompok || !$jenis) {
-            return response()->json([]);
-        }
-
-        $objeks = KodeRekening::objekByAkunKelompokJenis($akun, $kelompok, $jenis)->get();
-
-        $result = $objeks->map(function ($item) {
-            return [
-                'value' => $item->objek,
-                'text' => $item->objek . ' ' . $item->nama_objek
-            ];
-        });
-
-        return response()->json($result);
-    }
-
-    /**
-     * Get nomor rekening berdasarkan akun, kelompok, jenis, dan objek
-     */
-    public function getNomorRekening(Request $request): JsonResponse
-    {
-        $akun = $request->get('akun');
-        $kelompok = $request->get('kelompok');
-        $jenis = $request->get('jenis');
-        $objek = $request->get('objek');
-
-        if (!$akun || !$kelompok || !$jenis || !$objek) {
-            return response()->json([]);
-        }
-
-        $nomorRekenings = KodeRekening::nomorByFilter($akun, $kelompok, $jenis, $objek)->get();
-
-        $result = $nomorRekenings->map(function ($item) {
-            return [
-                'id' => $item->id,
-                'value' => $item->nomor,
-                'text' => $item->kode_lengkap . ' - ' . $item->uraian,
-                'uraian' => $item->uraian
-            ];
-        });
-
-        return response()->json($result);
-    }
-
-    /**
-     * Get uraian berdasarkan kode rekening id
-     */
-    public function getUraian(Request $request): JsonResponse
-    {
-        $kodeRekeningId = $request->get('kode_rekening_id');
-
-        if (!$kodeRekeningId) {
-            return response()->json(['uraian' => '']);
-        }
-
-        $kodeRekening = KodeRekening::find($kodeRekeningId);
-
-        if (!$kodeRekening) {
-            return response()->json(['uraian' => '']);
+        if ($rekening) {
+            return response()->json([
+                'success' => true,
+                'data' => $rekening
+            ]);
         }
 
         return response()->json([
-            'uraian' => $kodeRekening->uraian,
-            'kode_lengkap' => $kodeRekening->kode_lengkap
+            'success' => false,
+            'message' => 'Data tidak ditemukan'
         ]);
     }
 }
