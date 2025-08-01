@@ -13,7 +13,7 @@ class CreateAsetLancarsTable extends Migration
 
             $table->foreignId('rekening_uraian_id')->constrained('rekening_uraians')->onDelete('cascade');
 
-            $table->string('nama_kegiatan');
+            $table->string('nama_kegiatan')->nullable();
             $table->text('uraian_kegiatan')->nullable();
             $table->text('uraian_jenis_barang')->nullable();
 

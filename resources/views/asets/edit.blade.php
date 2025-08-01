@@ -1422,6 +1422,179 @@
         function goBack() {
             window.history.back();
         }
+document.addEventListener('DOMContentLoaded', function() {
+    const keadaanBarangSelect = document.querySelector('select[name="keadaan_barang"]');
+    
+    if (keadaanBarangSelect) {
+        keadaanBarangSelect.addEventListener('change', function() {
+            handleKeadaanBarangChange(this.value);
+        });
+        
+        // Trigger untuk nilai yang sudah ada saat halaman dimuat
+        if (keadaanBarangSelect.value) {
+            handleKeadaanBarangChange(keadaanBarangSelect.value);
+        }
+    }
+});
+
+// Function baru untuk handle perubahan keadaan barang
+function handleKeadaanBarangChange(keadaanBarang) {
+    const kodeBarangDisplay = document.getElementById('kode-barang-text');
+    const kodeBarangInput = document.getElementById('kode_barang');
+    const kodePreview = document.getElementById('kode-preview');
+    
+    if (keadaanBarang === 'Rusak Berat') {
+        // Jika rusak berat, gunakan kode khusus
+        const kodeRusakBerat = '1.5.4.01.01.01.005';
+        
+        if (kodeBarangDisplay) {
+            kodeBarangDisplay.textContent = kodeRusakBerat;
+            kodeBarangDisplay.style.color = '#dc2626'; // Red color untuk rusak berat
+        }
+        
+        if (kodeBarangInput) {
+            kodeBarangInput.value = kodeRusakBerat;
+        }
+        
+        if (kodePreview) {
+            kodePreview.style.display = 'block';
+            kodePreview.style.borderColor = '#dc2626';
+            kodePreview.style.background = 'linear-gradient(135deg, #fee2e2 0%, #fef2f2 100%)';
+            
+            // Update icon dan text
+            const icon = kodePreview.querySelector('i');
+            if (icon) {
+                icon.style.color = '#dc2626';
+            }
+        }
+        
+        // Show warning message
+        showRusakBeratWarning();
+        
+        // Update register juga
+        updateRegisterForRusakBerat();
+        
+    } else if (keadaanBarang === 'Baik' || keadaanBarang === 'Kurang Baik') {
+        // Jika bukan rusak berat, gunakan kode normal dari hierarki
+        updateKodeBarang();
+        
+        // Reset styling
+        if (kodeBarangDisplay) {
+            kodeBarangDisplay.style.color = '#059669'; // Green color normal
+        }
+        
+        if (kodePreview) {
+            kodePreview.style.borderColor = '#059669';
+            kodePreview.style.background = 'linear-gradient(135deg, #dcfce7 0%, #f0fdf4 100%)';
+            
+            const icon = kodePreview.querySelector('i');
+            if (icon) {
+                icon.style.color = '#059669';
+            }
+        }
+        
+        // Hide warning
+        hideRusakBeratWarning();
+    }
+}
+
+// Function untuk show warning rusak berat
+function showRusakBeratWarning() {
+    // Remove existing warning first
+    hideRusakBeratWarning();
+    
+    const kodePreview = document.getElementById('kode-preview');
+    if (kodePreview) {
+        const warningDiv = document.createElement('div');
+        warningDiv.id = 'rusak-berat-warning';
+        warningDiv.className = 'alert alert-warning mt-3';
+        warningDiv.innerHTML = `
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>Perhatian:</strong> Aset dengan keadaan "Rusak Berat" akan menggunakan kode barang khusus 
+            dan akan diurutkan di bagian paling bawah daftar aset.
+        `;
+        
+        kodePreview.parentNode.insertBefore(warningDiv, kodePreview.nextSibling);
+    }
+}
+
+// Function untuk hide warning rusak berat
+function hideRusakBeratWarning() {
+    const existingWarning = document.getElementById('rusak-berat-warning');
+    if (existingWarning) {
+        existingWarning.remove();
+    }
+}
+
+// Function untuk update register khusus rusak berat
+function updateRegisterForRusakBerat() {
+    const kodeBarang = '1.5.4.01.01.01.005';
+    const registerInput = document.querySelector('input[name="register"]');
+    
+    if (!registerInput) return;
+    
+    // Untuk edit mode, tampilkan pesan bahwa register tidak berubah
+    // karena sudah ada register yang sudah diset sebelumnya
+    
+    // Optional: Bisa ditambahkan AJAX call jika ingin update register untuk rusak berat
+    // fetch('/asets/get-register-info', {
+    //     method: 'POST',
+    //     headers: {
+    //         'Content-Type': 'application/json',
+    //         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+    //     },
+    //     body: JSON.stringify({
+    //         kode_barang: kodeBarang
+    //     })
+    // })
+    // .then(response => response.json())
+    // .then(data => {
+    //     if (data.success) {
+    //         const nextRegisterFormatted = data.data.next_register_formatted;
+    //         registerInput.value = nextRegisterFormatted;
+    //     }
+    // })
+    // .catch(error => {
+    //     console.error('Error:', error);
+    // });
+}
+
+// Update function updateKodeBarang() yang sudah ada - tambahkan pengecekan keadaan barang
+// Ganti function updateKodeBarang() yang sudah ada dengan yang ini:
+function updateKodeBarang() {
+    const keadaanBarangSelect = document.querySelector('select[name="keadaan_barang"]');
+    
+    // Jika keadaan barang adalah rusak berat, gunakan kode khusus
+    if (keadaanBarangSelect && keadaanBarangSelect.value === 'Rusak Berat') {
+        handleKeadaanBarangChange('Rusak Berat');
+        return;
+    }
+    
+    // Generate kode barang automatically when all hierarchy is selected
+    if (selectedHierarchy.akun && selectedHierarchy.kelompok && selectedHierarchy.jenis && 
+        selectedHierarchy.objek && selectedHierarchy.rincianObjek && 
+        selectedHierarchy.subRincianObjek && selectedHierarchy.subSubRincianObjek) {
+        
+        // Generate kode barang from hierarchy
+        const kodeBarang = generateKodeFromHierarchy();
+        
+        if (kodeBarang) {
+            document.getElementById('kode-barang-text').textContent = kodeBarang;
+            document.getElementById('kode_barang').value = kodeBarang;
+            document.getElementById('kode-preview').style.display = 'block';
+        }
+    } else {
+        const existingKode = "{{ old('kode_barang', $aset->kode_barang) }}";
+        if(existingKode) {
+            document.getElementById('kode-barang-text').textContent = existingKode;
+            document.getElementById('kode_barang').value = existingKode;
+            document.getElementById('kode-preview').style.display = 'block';
+        } else {
+            hideKodePreview();
+        }
+    }
+}
+        
     </script>
 </body>
 </html>

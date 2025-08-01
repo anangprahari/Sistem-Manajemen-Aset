@@ -41,9 +41,25 @@ class AsetController extends Controller
             });
         }
 
-        // Filter tahun perolehan
+        // Filter tahun perolehan (single year - untuk backward compatibility)
         if ($request->filled('tahun_perolehan')) {
             $query->where('tahun_perolehan', $request->tahun_perolehan);
+        }
+
+        // Filter rentang tahun perolehan (BARU)
+        if ($request->filled('tahun_dari') || $request->filled('tahun_sampai')) {
+            $query->where(function ($q) use ($request) {
+                if ($request->filled('tahun_dari') && $request->filled('tahun_sampai')) {
+                    // Jika kedua tahun diisi
+                    $q->whereBetween('tahun_perolehan', [$request->tahun_dari, $request->tahun_sampai]);
+                } elseif ($request->filled('tahun_dari')) {
+                    // Jika hanya tahun dari yang diisi
+                    $q->where('tahun_perolehan', '>=', $request->tahun_dari);
+                } elseif ($request->filled('tahun_sampai')) {
+                    // Jika hanya tahun sampai yang diisi
+                    $q->where('tahun_perolehan', '<=', $request->tahun_sampai);
+                }
+            });
         }
 
         // Filter keadaan barang
@@ -51,7 +67,16 @@ class AsetController extends Controller
             $query->where('keadaan_barang', $request->keadaan_barang);
         }
 
-        $asets = $query->latest()->paginate(15);
+        $asets = $query->orderByRaw('
+        CAST(SUBSTRING_INDEX(kode_barang, ".", 1) AS UNSIGNED),
+        CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(kode_barang, ".", 2), ".", -1) AS UNSIGNED),
+        CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(kode_barang, ".", 3), ".", -1) AS UNSIGNED),
+        CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(kode_barang, ".", 4), ".", -1) AS UNSIGNED),  
+        CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(kode_barang, ".", 5), ".", -1) AS UNSIGNED),
+        CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(kode_barang, ".", 6), ".", -1) AS UNSIGNED),
+        CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(kode_barang, ".", 7), ".", -1) AS UNSIGNED),
+        CAST(SUBSTRING_INDEX(kode_barang, ".", -1) AS UNSIGNED)
+    ')->paginate(50);
 
         return view('asets.index', compact('asets'));
     }
@@ -61,13 +86,10 @@ class AsetController extends Controller
      */
     public function create(): View
     {
-        $akuns = Akun::orderBy('nama')->get();
+        $akuns = Akun::orderByRaw('CAST(kode AS UNSIGNED) ASC')->get();
         return view('asets.create', compact('akuns'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -79,7 +101,21 @@ class AsetController extends Controller
             'sub_rincian_objek_id' => 'required|exists:sub_rincian_objeks,id',
             'sub_sub_rincian_objek_id' => 'required|exists:sub_sub_rincian_objeks,id',
             'nama_bidang_barang' => 'required|string|max:255',
-            'register' => 'required|string|max:255',
+            'register' => [
+                'required',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) use ($request) {
+                    // Validasi unique untuk kombinasi kode_barang + register
+                    $kodeBarang = $request->keadaan_barang === 'Rusak Berat'
+                        ? $this->generateKodeBarangRusakBerat()
+                        : $request->kode_barang;
+
+                    if (Aset::where('kode_barang', $kodeBarang)->where('register', $value)->exists()) {
+                        $fail('Kombinasi kode barang dan register sudah digunakan.');
+                    }
+                }
+            ],
             'nama_jenis_barang' => 'required|string|max:255',
             'merk_type' => 'nullable|string|max:255',
             'no_sertifikat' => 'nullable|string|max:255',
@@ -96,7 +132,7 @@ class AsetController extends Controller
             'harga_satuan' => 'required|numeric|min:0',
             'bukti_barang' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'bukti_berita' => 'nullable|mimes:pdf|max:10240',
-            'kode_barang' => 'required|string',
+            'kode_barang' => 'required|string', // Hapus validasi unique dari sini
         ]);
 
         try {
@@ -115,7 +151,12 @@ class AsetController extends Controller
                     $request->file('bukti_berita')->storeAs('bukti_berita', $buktiBeritaFileName, 'public');
                 }
 
-                // Prepare base data (data yang sama untuk semua item)
+                // **PERBAIKAN: Tentukan kode barang berdasarkan keadaan barang**
+                $finalKodeBarang = $validated['keadaan_barang'] === 'Rusak Berat'
+                    ? $this->generateKodeBarangRusakBerat()
+                    : $validated['kode_barang'];
+
+                // Prepare base data
                 $baseData = [
                     'sub_sub_rincian_objek_id' => $validated['sub_sub_rincian_objek_id'],
                     'nama_bidang_barang' => $validated['nama_bidang_barang'],
@@ -131,38 +172,47 @@ class AsetController extends Controller
                     'ukuran_barang_konstruksi' => $validated['ukuran_barang_konstruksi'],
                     'satuan' => $validated['satuan'],
                     'keadaan_barang' => $validated['keadaan_barang'],
-                    'jumlah_barang' => 1, // Setiap record individual memiliki jumlah 1
+                    'jumlah_barang' => 1,
                     'harga_satuan' => $validated['harga_satuan'],
                 ];
 
                 $jumlahBarang = (int)$validated['jumlah_barang'];
                 $baseRegister = $validated['register'];
-                $baseKodeBarang = $validated['kode_barang'];
                 $createdAssets = [];
 
+                // **PERBAIKAN: Cari register terakhir untuk kode barang yang akan digunakan (final)**
+                $lastRegisterNumber = $this->getLastRegisterNumber($finalKodeBarang);
+                $startingNumber = $lastRegisterNumber + 1;
+
                 // Buat multiple assets berdasarkan jumlah_barang
-                for ($i = 1; $i <= $jumlahBarang; $i++) {
+                for ($i = 0; $i < $jumlahBarang; $i++) {
                     $assetData = $baseData;
-                    $sequence = str_pad($i, 3, '0', STR_PAD_LEFT); // 001, 002, 003, dst
+                    $currentNumber = $startingNumber + $i;
+                    $sequence = str_pad($currentNumber, 3, '0', STR_PAD_LEFT);
 
                     // Generate register berurutan
-                    $assetData['register'] = $this->generateSequentialIdentifier($baseRegister, $sequence);
+                    $assetData['register'] = $this->generateRegisterFromKodeBarang($finalKodeBarang, $sequence);
 
-                    // Kode barang TETAP SAMA untuk semua asset
-                    $assetData['kode_barang'] = $baseKodeBarang;
+                    // **PERBAIKAN: Gunakan kode barang yang sudah ditentukan (normal atau rusak berat)**
+                    $assetData['kode_barang'] = $finalKodeBarang;
 
-                    // SEMUA asset mendapat file attachment
+                    // Attachment files
                     $assetData['bukti_barang'] = $buktiBarangFileName;
                     $assetData['bukti_berita'] = $buktiBeritaFileName;
 
                     $createdAsset = Aset::create($assetData);
-                    $createdAssets[] = $createdAsset->register; // Ubah ke register untuk pesan
+                    $createdAssets[] = $createdAsset->register;
                 }
 
                 $message = $jumlahBarang > 1
                     ? "Berhasil menambahkan {$jumlahBarang} aset. Register: " . implode(', ', array_slice($createdAssets, 0, 3)) .
                     ($jumlahBarang > 3 ? ' dan ' . ($jumlahBarang - 3) . ' lainnya' : '')
                     : "Aset berhasil ditambahkan dengan register: {$createdAssets[0]}";
+
+                // **PERBAIKAN: Tambahkan informasi jika status rusak berat**
+                if ($validated['keadaan_barang'] === 'Rusak Berat') {
+                    $message .= ". Kode barang telah diubah ke kategori Rusak Berat: {$finalKodeBarang}";
+                }
 
                 return redirect()->route('asets.index')->with('success', $message);
             });
@@ -175,6 +225,125 @@ class AsetController extends Controller
             return redirect()->back()
                 ->with('error', 'Terjadi kesalahan saat menyimpan data aset: ' . $e->getMessage())
                 ->withInput();
+        }
+    }
+
+    /**
+     * Mendapatkan nomor register terakhir untuk kode barang tertentu
+     */
+    private function getLastRegisterNumber(string $kodeBarang): int
+    {
+        // Cari aset dengan kode barang yang sama, urutkan berdasarkan register terakhir
+        $lastAsset = Aset::where('kode_barang', $kodeBarang)
+            ->orderByRaw('CAST(register AS UNSIGNED) DESC')
+            ->first();
+
+        if (!$lastAsset) {
+            return 0; // Jika belum ada, mulai dari 0
+        }
+
+        // Ambil nomor register dan convert ke integer
+        $lastNumber = (int) $lastAsset->register;
+
+        return $lastNumber;
+    }
+
+    /**
+     * Generate register dari kode barang dengan menambahkan sequence number
+     */
+    private function generateRegisterFromKodeBarang(string $kodeBarang, string $sequence): string
+    {
+        return $sequence;
+    }
+
+    /**
+     * Generate register dengan format yang benar untuk preview
+     */
+    public function generateRegisterPreview(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'kode_barang' => 'required|string'
+            ]);
+
+            $kodeBarang = $request->kode_barang;
+
+            // Cari nomor register terakhir untuk kode barang ini
+            $lastRegisterNumber = $this->getLastRegisterNumber($kodeBarang);
+
+            // Nomor register berikutnya
+            $nextNumber = $lastRegisterNumber + 1;
+            $sequence = str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+
+            // Generate register preview
+            $registerPreview = $this->generateRegisterFromKodeBarang($kodeBarang, $sequence);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'register_preview' => $registerPreview,
+                    'last_number' => $lastRegisterNumber,
+                    'next_number' => $nextNumber,
+                    'sequence' => $sequence,
+                    'info' => "Register terakhir untuk kode barang {$kodeBarang}: " .
+                        ($lastRegisterNumber > 0 ? str_pad($lastRegisterNumber, 3, '0', STR_PAD_LEFT) : 'Belum ada')
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error generating register preview: ' . $e->getMessage(), [
+                'request_data' => $request->all()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat generate register preview.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Mendapatkan informasi register untuk kode barang tertentu
+     */
+    public function getRegisterInfo(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'kode_barang' => 'required|string'
+            ]);
+
+            $kodeBarang = $request->kode_barang;
+
+            // Hitung total aset dengan kode barang yang sama
+            $totalAssets = Aset::where('kode_barang', $kodeBarang)->count();
+
+            // Cari nomor register terakhir
+            $lastRegisterNumber = $this->getLastRegisterNumber($kodeBarang);
+
+            // Nomor register berikutnya
+            $nextNumber = $lastRegisterNumber + 1;
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'kode_barang' => $kodeBarang,
+                    'total_existing_assets' => $totalAssets,
+                    'last_register_number' => $lastRegisterNumber,
+                    'next_register_number' => $nextNumber,
+                    'next_register_formatted' => str_pad($nextNumber, 3, '0', STR_PAD_LEFT),
+                    'info_message' => $totalAssets > 0
+                        ? "Sudah ada {$totalAssets} aset dengan kode ini. Register berikutnya: " . str_pad($nextNumber, 3, '0', STR_PAD_LEFT)
+                        : "Belum ada aset dengan kode ini. Register akan dimulai dari: 001"
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error getting register info: ' . $e->getMessage(), [
+                'request_data' => $request->all()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengambil informasi register.'
+            ], 500);
         }
     }
 
@@ -199,13 +368,19 @@ class AsetController extends Controller
         $hierarchy = $this->extractHierarchy($aset);
 
         // Get all dropdown data based on current selections
-        $akuns = Akun::orderBy('nama')->get();
-        $kelompoks = Kelompok::where('akun_id', $hierarchy['akun']->id)->orderBy('nama')->get();
-        $jenis = Jenis::where('kelompok_id', $hierarchy['kelompok']->id)->orderBy('nama')->get();
-        $objeks = Objek::where('jenis_id', $hierarchy['jenis']->id)->orderBy('nama')->get();
-        $rincianObjeks = RincianObjek::where('objek_id', $hierarchy['objek']->id)->orderBy('nama')->get();
-        $subRincianObjeks = SubRincianObjek::where('rincian_objek_id', $hierarchy['rincianObjek']->id)->orderBy('nama')->get();
-        $subSubRincianObjeks = SubSubRincianObjek::where('sub_rincian_objek_id', $hierarchy['subRincianObjek']->id)->orderBy('nama_barang')->get();
+        $akuns = Akun::orderByRaw('CAST(kode AS UNSIGNED) ASC')->get();
+        $kelompoks = Kelompok::where('akun_id', $hierarchy['akun']->id)
+            ->orderByRaw('CAST(kode AS UNSIGNED) ASC')->get();
+        $jenis = Jenis::where('kelompok_id', $hierarchy['kelompok']->id)
+            ->orderByRaw('CAST(kode AS UNSIGNED) ASC')->get();
+        $objeks = Objek::where('jenis_id', $hierarchy['jenis']->id)
+            ->orderByRaw('CAST(kode AS UNSIGNED) ASC')->get();
+        $rincianObjeks = RincianObjek::where('objek_id', $hierarchy['objek']->id)
+            ->orderByRaw('CAST(kode AS UNSIGNED) ASC')->get();
+        $subRincianObjeks = SubRincianObjek::where('rincian_objek_id', $hierarchy['rincianObjek']->id)
+            ->orderByRaw('CAST(kode AS UNSIGNED) ASC')->get();
+        $subSubRincianObjeks = SubSubRincianObjek::where('sub_rincian_objek_id', $hierarchy['subRincianObjek']->id)
+            ->orderByRaw('CAST(kode AS UNSIGNED) ASC')->get();
 
         // Tambahkan selected values untuk memudahkan pre-populate form
         $selectedValues = [
@@ -231,13 +406,11 @@ class AsetController extends Controller
             'selectedValues'
         ));
     }
-    
+
     /**
      * Update the specified resource in storage.
      */
-    /**
-     * Update the specified resource in storage.
-     */
+    // Perbaikan method update() di AsetController.php
     public function update(Request $request, Aset $aset): RedirectResponse
     {
         Log::info('Update request received', [
@@ -245,66 +418,73 @@ class AsetController extends Controller
             'request_data' => $request->except(['bukti_barang', 'bukti_berita'])
         ]);
 
-        $validated = $request->validate([
-            'akun_id' => 'required|exists:akuns,id',
-            'kelompok_id' => 'required|exists:kelompoks,id',
-            'jenis_id' => 'required|exists:jenis,id',
-            'objek_id' => 'required|exists:objeks,id',
-            'rincian_objek_id' => 'required|exists:rincian_objeks,id',
-            'sub_rincian_objek_id' => 'required|exists:sub_rincian_objeks,id',
-            'sub_sub_rincian_objek_id' => 'required|exists:sub_sub_rincian_objeks,id',
-            'nama_bidang_barang' => 'required|string|max:255',
-            'register' => [
-                'required',
-                'string',
-                'max:255',
-                function ($attribute, $value, $fail) use ($aset) {
-                    if ($value !== $aset->register && Aset::where('register', $value)->exists()) {
-                        $fail('Register sudah digunakan.');
+        $validated = $request->validate(
+            [
+                'akun_id' => 'required|exists:akuns,id',
+                'kelompok_id' => 'required|exists:kelompoks,id',
+                'jenis_id' => 'required|exists:jenis,id',
+                'objek_id' => 'required|exists:objeks,id',
+                'rincian_objek_id' => 'required|exists:rincian_objeks,id',
+                'sub_rincian_objek_id' => 'required|exists:sub_rincian_objeks,id',
+                'sub_sub_rincian_objek_id' => 'required|exists:sub_sub_rincian_objeks,id',
+                'nama_bidang_barang' => 'required|string|max:255',
+                'register' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    function ($attribute, $value, $fail) use ($aset, $request) {
+                        // Validasi unique untuk kombinasi kode_barang + register (exclude current record)
+                        $kodeBarang = $request->keadaan_barang === 'Rusak Berat'
+                            ? $this->generateKodeBarangRusakBerat()
+                            : $request->kode_barang;
+
+                        $query = Aset::where('kode_barang', $kodeBarang)->where('register', $value);
+
+                        // Exclude current record
+                        if ($aset->id) {
+                            $query->where('id', '!=', $aset->id);
+                        }
+
+                        if ($query->exists()) {
+                            $fail('Kombinasi kode barang dan register sudah digunakan.');
+                        }
                     }
-                }
+                ],
+                'nama_jenis_barang' => 'required|string|max:255',
+                'merk_type' => 'nullable|string|max:255',
+                'no_sertifikat' => 'nullable|string|max:255',
+                'no_plat_kendaraan' => 'nullable|string|max:255',
+                'no_pabrik' => 'nullable|string|max:255',
+                'no_casis' => 'nullable|string|max:255',
+                'bahan' => 'nullable|string|max:255',
+                'asal_perolehan' => 'required|string|max:255',
+                'tahun_perolehan' => 'required|digits:4|integer|min:1900|max:' . date('Y'),
+                'ukuran_barang_konstruksi' => 'nullable|string|max:255',
+                'satuan' => 'required|string|max:100',
+                'keadaan_barang' => ['required', Rule::in(['Baik', 'Kurang Baik', 'Rusak Berat'])],
+                'jumlah_barang' => 'required|integer|min:1|max:100',
+                'harga_satuan' => 'required|numeric|min:0',
+                'bukti_barang' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'bukti_berita' => 'nullable|mimes:pdf|max:10240',
+                'kode_barang' => 'required|string', // Hapus validasi unique dari sini
             ],
-            'nama_jenis_barang' => 'required|string|max:255',
-            'merk_type' => 'nullable|string|max:255',
-            'no_sertifikat' => 'nullable|string|max:255',
-            'no_plat_kendaraan' => 'nullable|string|max:255',
-            'no_pabrik' => 'nullable|string|max:255',
-            'no_casis' => 'nullable|string|max:255',
-            'bahan' => 'nullable|string|max:255',
-            'asal_perolehan' => 'required|string|max:255',
-            'tahun_perolehan' => 'required|digits:4|integer|min:1900|max:' . date('Y'),
-            'ukuran_barang_konstruksi' => 'nullable|string|max:255',
-            'satuan' => 'required|string|max:100',
-            'keadaan_barang' => ['required', Rule::in(['Baik', 'Kurang Baik', 'Rusak Berat'])],
-            'jumlah_barang' => 'required|integer|min:1|max:100',
-            'harga_satuan' => 'required|numeric|min:0',
-            'bukti_barang' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'bukti_berita' => 'nullable|mimes:pdf|max:10240',
-            'kode_barang' => [
-                'required',
-                'string',
-                function ($attribute, $value, $fail) use ($aset) {
-                    if ($value !== $aset->kode_barang && Aset::where('kode_barang', $value)->exists()) {
-                        $fail('Kode barang sudah digunakan.');
-                    }
-                }
-            ],
-        ], [
-            'akun_id.required' => 'Akun harus dipilih',
-            'kelompok_id.required' => 'Kelompok harus dipilih',
-            'jenis_id.required' => 'Jenis harus dipilih',
-            'objek_id.required' => 'Objek harus dipilih',
-            'rincian_objek_id.required' => 'Rincian objek harus dipilih',
-            'sub_rincian_objek_id.required' => 'Sub rincian objek harus dipilih',
-            'sub_sub_rincian_objek_id.required' => 'Sub sub rincian objek harus dipilih',
-            'register.unique' => 'Register sudah digunakan',
-            'kode_barang.unique' => 'Kode barang sudah digunakan',
-            'tahun_perolehan.digits' => 'Tahun perolehan harus 4 digit',
-            'tahun_perolehan.max' => 'Tahun perolehan tidak boleh melebihi tahun sekarang',
-            'jumlah_barang.max' => 'Jumlah barang maksimal 100',
-            'bukti_barang.max' => 'Ukuran file gambar maksimal 2MB',
-            'bukti_berita.max' => 'Ukuran file PDF maksimal 10MB',
-        ]);
+            [
+                'akun_id.required' => 'Akun harus dipilih',
+                'kelompok_id.required' => 'Kelompok harus dipilih',
+                'jenis_id.required' => 'Jenis harus dipilih',
+                'objek_id.required' => 'Objek harus dipilih',
+                'rincian_objek_id.required' => 'Rincian objek harus dipilih',
+                'sub_rincian_objek_id.required' => 'Sub rincian objek harus dipilih',
+                'sub_sub_rincian_objek_id.required' => 'Sub sub rincian objek harus dipilih',
+                'register.unique' => 'Register sudah digunakan',
+                'kode_barang.unique' => 'Kode barang sudah digunakan',
+                'tahun_perolehan.digits' => 'Tahun perolehan harus 4 digit',
+                'tahun_perolehan.max' => 'Tahun perolehan tidak boleh melebihi tahun sekarang',
+                'jumlah_barang.max' => 'Jumlah barang maksimal 100',
+                'bukti_barang.max' => 'Ukuran file gambar maksimal 2MB',
+                'bukti_berita.max' => 'Ukuran file PDF maksimal 10MB',
+            ]
+        );
 
         Log::info('Validation passed', ['validated_data' => array_keys($validated)]);
 
@@ -316,7 +496,6 @@ class AsetController extends Controller
                 if ($request->hasFile('bukti_barang')) {
                     $file = $request->file('bukti_barang');
                     if ($file->isValid()) {
-                        // Delete old file if exists
                         if ($aset->bukti_barang && Storage::disk('public')->exists('bukti_barang/' . $aset->bukti_barang)) {
                             Storage::disk('public')->delete('bukti_barang/' . $aset->bukti_barang);
                             Log::info('Old bukti_barang deleted', ['filename' => $aset->bukti_barang]);
@@ -336,7 +515,6 @@ class AsetController extends Controller
                 if ($request->hasFile('bukti_berita')) {
                     $file = $request->file('bukti_berita');
                     if ($file->isValid()) {
-                        // Delete old file if exists
                         if ($aset->bukti_berita && Storage::disk('public')->exists('bukti_berita/' . $aset->bukti_berita)) {
                             Storage::disk('public')->delete('bukti_berita/' . $aset->bukti_berita);
                             Log::info('Old bukti_berita deleted', ['filename' => $aset->bukti_berita]);
@@ -352,12 +530,17 @@ class AsetController extends Controller
                     }
                 }
 
+                // **PERBAIKAN: Tentukan kode barang berdasarkan keadaan barang**
+                $finalKodeBarang = $validated['keadaan_barang'] === 'Rusak Berat'
+                    ? $this->generateKodeBarangRusakBerat()
+                    : $validated['kode_barang'];
+
                 // Prepare update data
                 $updateData = [
                     'sub_sub_rincian_objek_id' => $validated['sub_sub_rincian_objek_id'],
                     'nama_bidang_barang' => $validated['nama_bidang_barang'],
                     'register' => $validated['register'],
-                    'kode_barang' => $validated['kode_barang'],
+                    'kode_barang' => $finalKodeBarang, // **PERBAIKAN: Gunakan kode barang yang sudah ditentukan**
                     'nama_jenis_barang' => $validated['nama_jenis_barang'],
                     'merk_type' => $validated['merk_type'],
                     'no_sertifikat' => $validated['no_sertifikat'],
@@ -377,13 +560,10 @@ class AsetController extends Controller
                 // Merge file updates
                 $updateData = array_merge($updateData, $fileUpdates);
 
-                // Log data before update
                 Log::info('Attempting to update asset', ['aset_id' => $aset->id, 'update_data' => $updateData]);
 
-                // Update the asset
                 $updated = $aset->update($updateData);
 
-                // Check if update was successful
                 if (!$updated) {
                     Log::error('Failed to update asset', ['aset_id' => $aset->id]);
                     throw new \Exception('Gagal mengupdate data aset');
@@ -391,8 +571,14 @@ class AsetController extends Controller
 
                 Log::info('Asset updated successfully', ['aset_id' => $aset->id]);
 
-                return redirect()->route('asets.index')
-                    ->with('success', 'Aset berhasil diperbarui');
+                $message = 'Aset berhasil diperbarui';
+
+                // **PERBAIKAN: Tambahkan informasi jika status rusak berat**
+                if ($validated['keadaan_barang'] === 'Rusak Berat' && $finalKodeBarang !== $validated['kode_barang']) {
+                    $message .= ". Kode barang telah diubah ke kategori Rusak Berat: {$finalKodeBarang}";
+                }
+
+                return redirect()->route('asets.index')->with('success', $message);
             });
         } catch (\Illuminate\Validation\ValidationException $e) {
             Log::error('Validation error in update', [
@@ -610,12 +796,22 @@ class AsetController extends Controller
     public function export(Request $request)
     {
         try {
-            // Validate request parameters
+            // Validate request parameters (UPDATE VALIDATION)
             $request->validate([
                 'search' => 'nullable|string|max:255',
                 'tahun_perolehan' => 'nullable|integer|min:1900|max:' . date('Y'),
+                'tahun_dari' => 'nullable|integer|min:1900|max:' . date('Y'),
+                'tahun_sampai' => 'nullable|integer|min:1900|max:' . date('Y'),
                 'keadaan_barang' => 'nullable|string|in:Baik,Kurang Baik,Rusak Berat'
             ]);
+
+            // Validasi rentang tahun
+            if ($request->filled('tahun_dari') && $request->filled('tahun_sampai')) {
+                if ($request->tahun_dari > $request->tahun_sampai) {
+                    return redirect()->back()
+                        ->with('error', 'Tahun dari tidak boleh lebih besar dari tahun sampai.');
+                }
+            }
 
             // Get filter parameters (same logic as index method)
             $query = Aset::with([
@@ -633,13 +829,43 @@ class AsetController extends Controller
                 });
             }
 
+            // Filter tahun perolehan (single year - untuk backward compatibility)
             if ($request->filled('tahun_perolehan')) {
                 $query->where('tahun_perolehan', $request->tahun_perolehan);
             }
 
+            // Filter rentang tahun perolehan (BARU)
+            if ($request->filled('tahun_dari') || $request->filled('tahun_sampai')) {
+                $query->where(function ($q) use ($request) {
+                    if ($request->filled('tahun_dari') && $request->filled('tahun_sampai')) {
+                        // Jika kedua tahun diisi
+                        $q->whereBetween('tahun_perolehan', [$request->tahun_dari, $request->tahun_sampai]);
+                    } elseif ($request->filled('tahun_dari')) {
+                        // Jika hanya tahun dari yang diisi
+                        $q->where('tahun_perolehan', '>=', $request->tahun_dari);
+                    } elseif ($request->filled('tahun_sampai')) {
+                        // Jika hanya tahun sampai yang diisi
+                        $q->where('tahun_perolehan', '<=', $request->tahun_sampai);
+                    }
+                });
+            }
+
+            // Filter keadaan barang
             if ($request->filled('keadaan_barang')) {
                 $query->where('keadaan_barang', $request->keadaan_barang);
             }
+
+            // PERBAIKAN: Terapkan pengurutan yang sama seperti di method index()
+            $query->orderByRaw('
+            CAST(SUBSTRING_INDEX(kode_barang, ".", 1) AS UNSIGNED),
+            CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(kode_barang, ".", 2), ".", -1) AS UNSIGNED),
+            CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(kode_barang, ".", 3), ".", -1) AS UNSIGNED),
+            CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(kode_barang, ".", 4), ".", -1) AS UNSIGNED),  
+            CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(kode_barang, ".", 5), ".", -1) AS UNSIGNED),
+            CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(kode_barang, ".", 6), ".", -1) AS UNSIGNED),
+            CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(kode_barang, ".", 7), ".", -1) AS UNSIGNED),
+            CAST(SUBSTRING_INDEX(kode_barang, ".", -1) AS UNSIGNED)
+        ');
 
             $totalRecords = $query->count();
 
@@ -648,12 +874,19 @@ class AsetController extends Controller
                     ->with('warning', 'Tidak ada data untuk diekspor dengan filter yang dipilih.');
             }
 
-            // Generate filename with filter info
+            // Generate filename with filter info (UPDATE FILENAME GENERATION)
             $filename = 'Data_Aset_' . date('Y-m-d_H-i-s');
 
             $filterInfo = [];
             if ($request->filled('search')) $filterInfo[] = 'Search';
             if ($request->filled('tahun_perolehan')) $filterInfo[] = 'Tahun' . $request->tahun_perolehan;
+            if ($request->filled('tahun_dari') && $request->filled('tahun_sampai')) {
+                $filterInfo[] = 'Tahun' . $request->tahun_dari . '-' . $request->tahun_sampai;
+            } elseif ($request->filled('tahun_dari')) {
+                $filterInfo[] = 'Dari' . $request->tahun_dari;
+            } elseif ($request->filled('tahun_sampai')) {
+                $filterInfo[] = 'Sampai' . $request->tahun_sampai;
+            }
             if ($request->filled('keadaan_barang')) $filterInfo[] = str_replace(' ', '', $request->keadaan_barang);
 
             if (!empty($filterInfo)) {
@@ -661,27 +894,33 @@ class AsetController extends Controller
             }
             $filename .= '.xlsx';
 
-            // Log export activity
+            // Log export activity (UPDATE LOG)
             Log::info('Exporting assets to Excel', [
                 'user_id' => auth()->id(),
                 'total_records' => $totalRecords,
                 'filters' => [
                     'search' => $request->search,
                     'tahun_perolehan' => $request->tahun_perolehan,
+                    'tahun_dari' => $request->tahun_dari,
+                    'tahun_sampai' => $request->tahun_sampai,
                     'keadaan_barang' => $request->keadaan_barang
                 ],
                 'filename' => $filename
             ]);
 
-            // Set memory limit for large exports
             if ($totalRecords > 5000) {
                 ini_set('memory_limit', '512M');
                 set_time_limit(300);
             }
 
-            // Export to Excel with filters
             return Excel::download(
-                new AsetExport($request->search, $request->tahun_perolehan, $request->keadaan_barang),
+                new AsetExport(
+                    $request->search,
+                    $request->tahun_perolehan,
+                    $request->keadaan_barang,
+                    $request->tahun_dari,
+                    $request->tahun_sampai
+                ),
                 $filename,
                 \Maatwebsite\Excel\Excel::XLSX
             );
@@ -708,7 +947,7 @@ class AsetController extends Controller
     {
         try {
             $kelompoks = Kelompok::where('akun_id', $akunId)
-                ->orderBy('nama')
+                ->orderByRaw('CAST(kode AS UNSIGNED) ASC')
                 ->get(['id', 'nama', 'kode']);
 
             return response()->json([
@@ -732,7 +971,7 @@ class AsetController extends Controller
     {
         try {
             $jenis = Jenis::where('kelompok_id', $kelompokId)
-                ->orderBy('nama')
+                ->orderByRaw('CAST(kode AS UNSIGNED) ASC')
                 ->get(['id', 'nama', 'kode']);
 
             return response()->json([
@@ -756,7 +995,7 @@ class AsetController extends Controller
     {
         try {
             $objeks = Objek::where('jenis_id', $jenisId)
-                ->orderBy('nama')
+                ->orderByRaw('CAST(kode AS UNSIGNED) ASC')
                 ->get(['id', 'nama', 'kode']);
 
             return response()->json([
@@ -780,7 +1019,7 @@ class AsetController extends Controller
     {
         try {
             $rincianObjeks = RincianObjek::where('objek_id', $objekId)
-                ->orderBy('nama')
+                ->orderByRaw('CAST(kode AS UNSIGNED) ASC')
                 ->get(['id', 'nama', 'kode']);
 
             return response()->json([
@@ -804,7 +1043,7 @@ class AsetController extends Controller
     {
         try {
             $subRincianObjeks = SubRincianObjek::where('rincian_objek_id', $rincianObjekId)
-                ->orderBy('nama')
+                ->orderByRaw('CAST(kode AS UNSIGNED) ASC')
                 ->get(['id', 'nama', 'kode']);
 
             return response()->json([
@@ -828,7 +1067,7 @@ class AsetController extends Controller
     {
         try {
             $subSubRincianObjeks = SubSubRincianObjek::where('sub_rincian_objek_id', $subRincianObjekId)
-                ->orderBy('nama_barang')
+                ->orderByRaw('CAST(kode AS UNSIGNED) ASC')
                 ->get(['id', 'nama_barang', 'kode']);
 
             return response()->json([
@@ -1179,5 +1418,15 @@ class AsetController extends Controller
             Log::warning('Failed to merge PDF files, returning main PDF only: ' . $e->getMessage());
             return $mainPdfContent; // Return main PDF if merge fails
         }
+    }
+
+    /**
+     * Generate kode barang untuk aset rusak berat
+     * Format khusus: 1.5.4.01.01.01.005
+     */
+    private function generateKodeBarangRusakBerat(): string
+    {
+        // Kode barang tetap untuk semua aset rusak berat
+        return '1.5.4.01.01.01.005';
     }
 }

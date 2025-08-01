@@ -106,7 +106,7 @@ class AsetLancarController extends Controller
         // Ganti validation rules di method store() dan update()
         $request->validate([
             'rekening_uraian_id' => 'required|exists:rekening_uraians,id',
-            'nama_kegiatan' => 'required|string|max:255',
+            'nama_kegiatan' => 'nullable|string|max:255',
             'uraian_kegiatan' => 'nullable|string',
             'uraian_jenis_barang' => 'nullable|string',
             'saldo_awal_unit' => 'nullable|integer|min:0',
@@ -184,7 +184,7 @@ class AsetLancarController extends Controller
         // Ganti validation rules di method store() dan update()
         $request->validate([
             'rekening_uraian_id' => 'required|exists:rekening_uraians,id',
-            'nama_kegiatan' => 'required|string|max:255',
+            'nama_kegiatan' => 'nullable|string|max:255',
             'uraian_kegiatan' => 'nullable|string',
             'uraian_jenis_barang' => 'nullable|string',
             'saldo_awal_unit' => 'nullable|integer|min:0',

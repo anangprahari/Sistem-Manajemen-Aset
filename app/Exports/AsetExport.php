@@ -20,13 +20,17 @@ class AsetExport implements FromQuery, WithHeadings, WithMapping, WithStyles, Sh
     protected $search;
     protected $tahunPerolehan;
     protected $keadaanBarang;
+    protected $tahunDari;        // Parameter baru
+    protected $tahunSampai;      // Parameter baru
     private $rowNumber = 0;
 
-    public function __construct($search = null, $tahunPerolehan = null, $keadaanBarang = null)
+    public function __construct($search = null, $tahunPerolehan = null, $keadaanBarang = null, $tahunDari = null, $tahunSampai = null)
     {
         $this->search = $search;
         $this->tahunPerolehan = $tahunPerolehan;
         $this->keadaanBarang = $keadaanBarang;
+        $this->tahunDari = $tahunDari;           // Inisialisasi parameter baru
+        $this->tahunSampai = $tahunSampai;       // Inisialisasi parameter baru
     }
 
     public function query()
@@ -46,15 +50,42 @@ class AsetExport implements FromQuery, WithHeadings, WithMapping, WithStyles, Sh
             });
         }
 
+        // Filter tahun perolehan (single year)
         if ($this->tahunPerolehan) {
             $query->where('tahun_perolehan', $this->tahunPerolehan);
+        }
+
+        // Filter rentang tahun perolehan (BARU)
+        if ($this->tahunDari || $this->tahunSampai) {
+            $query->where(function ($q) {
+                if ($this->tahunDari && $this->tahunSampai) {
+                    // Jika kedua tahun diisi
+                    $q->whereBetween('tahun_perolehan', [$this->tahunDari, $this->tahunSampai]);
+                } elseif ($this->tahunDari) {
+                    // Jika hanya tahun dari yang diisi
+                    $q->where('tahun_perolehan', '>=', $this->tahunDari);
+                } elseif ($this->tahunSampai) {
+                    // Jika hanya tahun sampai yang diisi
+                    $q->where('tahun_perolehan', '<=', $this->tahunSampai);
+                }
+            });
         }
 
         if ($this->keadaanBarang) {
             $query->where('keadaan_barang', $this->keadaanBarang);
         }
 
-        return $query->latest();
+        // PERBAIKAN: Terapkan pengurutan yang sama seperti di method index() controller
+        return $query->orderByRaw('
+            CAST(SUBSTRING_INDEX(kode_barang, ".", 1) AS UNSIGNED),
+            CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(kode_barang, ".", 2), ".", -1) AS UNSIGNED),
+            CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(kode_barang, ".", 3), ".", -1) AS UNSIGNED),
+            CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(kode_barang, ".", 4), ".", -1) AS UNSIGNED),  
+            CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(kode_barang, ".", 5), ".", -1) AS UNSIGNED),
+            CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(kode_barang, ".", 6), ".", -1) AS UNSIGNED),
+            CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(kode_barang, ".", 7), ".", -1) AS UNSIGNED),
+            CAST(SUBSTRING_INDEX(kode_barang, ".", -1) AS UNSIGNED)
+        ');
     }
 
     public function headings(): array
